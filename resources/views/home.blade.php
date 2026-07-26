@@ -1,34 +1,45 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Apotek MD Farma</title>
 
     <style>
+        * { box-sizing: border-box; }
         body {
             font-family: Arial, sans-serif;
             margin: 0;
             background: #f5f7f9;
+            color: #1f2937;
         }
-
+        nav {
+            background: #146c43;
+            padding: 14px 10%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+        nav strong, nav a { color: white; }
+        nav a { text-decoration: none; margin-left: 14px; }
         header {
             background: #198754;
             color: white;
-            padding: 40px;
+            padding: 64px 20px;
             text-align: center;
         }
-
         .container {
-            width: 80%;
-            margin: auto;
+            width: min(900px, 90%);
+            margin: 30px auto;
         }
-
         .card {
             background: white;
-            padding: 20px;
-            margin: 20px 0;
-            border-radius: 10px;
+            padding: 24px;
+            margin: 18px 0;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, .06);
         }
-
         .btn {
             background: white;
             color: #198754;
@@ -36,104 +47,62 @@
             text-decoration: none;
             border-radius: 8px;
             display: inline-block;
-            margin-top: 20px;
+            margin-top: 18px;
+            font-weight: bold;
         }
-
         footer {
             background: #222;
             color: white;
             text-align: center;
-            padding: 15px;
+            padding: 18px;
         }
     </style>
-
 </head>
-
 <body>
+    <nav>
+        <strong>MD Farma</strong>
+        <div>
+            <a href="{{ route('home') }}">Beranda</a>
+            <a href="{{ route('consultation.create') }}">Konsultasi</a>
+            <a href="{{ route('admin.login') }}">Admin</a>
+        </div>
+    </nav>
 
-<header>
+    <header>
+        <h1>Apotek MD Farma</h1>
+        <p>Konsultasi obat online bersama apoteker terpercaya</p>
+        <a href="{{ route('consultation.create') }}" class="btn">Konsultasi Sekarang</a>
+    </header>
 
-<h1>Apotek MD Farma</h1>
+    <main class="container">
+        <section class="card">
+            <h2>Tentang Kami</h2>
+            <p>
+                Apotek MD Farma menyediakan layanan informasi obat dan konsultasi
+                kesehatan secara online untuk membantu pasien mendapatkan informasi
+                penggunaan obat yang tepat.
+            </p>
+        </section>
 
-<p>
-Konsultasi obat online bersama apoteker terpercaya
-</p>
+        <section class="card">
+            <h2>Jam Operasional</h2>
+            <p>Senin - Jumat: 08.00 - 20.00</p>
+            <p>Sabtu: 08.00 - 18.00</p>
+            <p>Minggu: Tutup</p>
+        </section>
 
-<a href="/konsultasi" class="button">
-Konsultasi Sekarang
-</a>
+        <section class="card">
+            <h2>Alamat</h2>
+            <p>Alamat Apotek MD Farma</p>
+        </section>
 
-</header>
+        <section class="card">
+            <h2>Apoteker</h2>
+            <p>Apoteker 1</p>
+            <p>Apoteker 2</p>
+        </section>
+    </main>
 
-
-<div class="container">
-
-<div class="card">
-
-<h2>Tentang Kami</h2>
-
-<p>
-Apotek MD Farma menyediakan layanan informasi obat
-dan konsultasi kesehatan secara online untuk membantu
-pasien mendapatkan informasi penggunaan obat yang tepat.
-</p>
-
-</div>
-
-
-<div class="card">
-
-<h2>Jam Operasional</h2>
-
-<p>
-Senin - Jumat : 08.00 - 20.00
-</p>
-
-<p>
-Sabtu : 08.00 - 18.00
-</p>
-
-<p>
-Minggu : Tutup
-</p>
-
-</div>
-
-
-<div class="card">
-
-<h2>Alamat</h2>
-
-<p>
-Alamat Apotek MD Farma
-</p>
-
-</div>
-
-
-<div class="card">
-
-<h2>Apoteker</h2>
-
-<p>
-Apoteker 1
-</p>
-
-<p>
-Apoteker 2
-</p>
-
-</div>
-
-</div>
-
-
-<footer>
-
-Copyright © 2026 Apotek MD Farma
-
-</footer>
-
-
+    <footer>Copyright © 2026 Apotek MD Farma</footer>
 </body>
 </html>

@@ -2,36 +2,32 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Consultation;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class ConsultationController extends Controller
 {
-    public function create()
+    public function create(): View
     {
         return view('consultation.form');
     }
 
-
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
-        $request->validate([
-            'nama' => 'required',
-            'umur' => 'required|integer',
-            'no_hp' => 'required',
-            'jenis_konsultasi' => 'required'
+        $validated = $request->validate([
+            'nama' => ['required', 'string', 'max:100'],
+            'umur' => ['required', 'integer', 'min:1', 'max:120'],
+            'no_hp' => ['required', 'string', 'max:20'],
+            'jenis_konsultasi' => ['required', 'in:resep,non_resep'],
         ]);
-
 
         $consultation = Consultation::create([
-            'nama' => $request->nama,
-            'umur' => $request->umur,
-            'no_hp' => $request->no_hp,
-            'jenis_konsultasi' => $request->jenis_konsultasi,
-            'status' => 'aktif'
+            ...$validated,
+            'status' => 'aktif',
         ]);
 
-
-        return redirect('/chat/'.$consultation->id);
+        return redirect()->route('chat.show', $consultation->id);
     }
 }
