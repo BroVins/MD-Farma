@@ -95,6 +95,32 @@
             gap:10px;
         }
 
+        .admin-nav {
+            display:flex;
+            align-items:center;
+            gap:6px;
+            margin-right:auto;
+        }
+
+        .admin-nav-link {
+            display:flex;
+            align-items:center;
+            gap:6px;
+            min-height:36px;
+            padding:7px 11px;
+            border-radius:10px;
+            color:rgba(255,255,255,.74);
+            text-decoration:none;
+            font-size:11px;
+            font-weight:800;
+        }
+
+        .admin-nav-link:hover,
+        .admin-nav-link.active {
+            color:#fff;
+            background:rgba(255,255,255,.14);
+        }
+
         .live-pill,
         .notification-button,
         .logout {
@@ -1096,10 +1122,26 @@
 </head>
 <body>
     <header class="topbar">
-        <a class="brand" href="{{ route('home') }}">
+        <a class="brand" href="{{ route('admin.inbox') }}">
             <span class="brand-mark">✚</span>
-            <span>MD Farma Analytics</span>
+            <span>MD Farma Admin</span>
         </a>
+
+        <nav class="admin-nav" aria-label="Navigasi admin">
+            <a
+                class="admin-nav-link"
+                href="{{ route('admin.inbox') }}"
+            >
+                💬 Inbox
+            </a>
+
+            <a
+                class="admin-nav-link active"
+                href="{{ route('admin.dashboard') }}"
+            >
+                📊 Analitik
+            </a>
+        </nav>
 
         <div class="admin-actions">
             <div
@@ -1150,7 +1192,7 @@
         <section class="hero">
             <div>
                 <p class="eyebrow">
-                    Dashboard operasional
+                    Dashboard analitik
                 </p>
                 <h1>Analitik Konsultasi</h1>
                 <p>

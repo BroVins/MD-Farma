@@ -26,9 +26,12 @@ class Consultation extends Model
 
     protected static function booted(): void
     {
-        static::creating(function (Consultation $consultation): void {
-            $consultation->public_id ??= (string) Str::uuid();
-        });
+        static::creating(
+            function (Consultation $consultation): void {
+                $consultation->public_id ??=
+                    (string) Str::uuid();
+            }
+        );
     }
 
     public function getRouteKeyName(): string
@@ -38,12 +41,28 @@ class Consultation extends Model
 
     public function guest()
     {
-        return $this->belongsTo(ConsultationGuest::class, 'guest_id');
+        return $this->belongsTo(
+            ConsultationGuest::class,
+            'guest_id'
+        );
     }
 
     public function messages()
     {
         return $this->hasMany(Message::class);
+    }
+
+    public function lastMessage()
+    {
+        return $this->hasOne(Message::class)
+            ->latestOfMany('id');
+    }
+
+    public function adminReads()
+    {
+        return $this->hasMany(
+            AdminConsultationRead::class
+        );
     }
 
     public function analyticsEvents()

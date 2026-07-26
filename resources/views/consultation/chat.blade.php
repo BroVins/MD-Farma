@@ -367,8 +367,8 @@
     <nav>
         <div class="nav-links">
             @if (auth('admin')->check())
-                <a href="{{ route('admin.dashboard') }}">
-                    ← Dashboard
+                <a href="{{ route('admin.inbox') }}">
+                    ← Inbox Admin
                 </a>
             @else
                 <a href="{{ route('home') }}">← Beranda</a>

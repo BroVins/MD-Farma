@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Events\AdminDashboardActivity;
+use App\Events\AdminInboxActivity;
 use App\Models\AnalyticsEvent;
 use App\Models\Consultation;
 use Carbon\CarbonImmutable;
@@ -22,7 +23,7 @@ class AdminController extends Controller
     public function login(): View|RedirectResponse
     {
         if (Auth::guard('admin')->check()) {
-            return redirect()->route('admin.dashboard');
+            return redirect()->route('admin.inbox');
         }
 
         return view('admin.login');
@@ -43,7 +44,7 @@ class AdminController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('admin.dashboard'));
+        return redirect()->intended(route('admin.inbox'));
     }
 
     public function dashboard(Request $request): View
@@ -105,7 +106,7 @@ class AdminController extends Controller
     public function updateStatus(
         Request $request,
         Consultation $consultation
-    ): RedirectResponse {
+    ): JsonResponse|RedirectResponse {
         $validated = $request->validate([
             'status' => ['required', 'in:aktif,selesai'],
         ]);
@@ -133,12 +134,24 @@ class AdminController extends Controller
             'status_changed'
         );
 
-        return back()->with(
-            'success',
-            $validated['status'] === 'selesai'
-                ? 'Konsultasi ditandai selesai.'
-                : 'Konsultasi diaktifkan kembali.'
+        $this->broadcastInboxActivity(
+            $consultation,
+            'status_changed'
         );
+
+        $message = $validated['status'] === 'selesai'
+            ? 'Konsultasi ditandai selesai.'
+            : 'Konsultasi diaktifkan kembali.';
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'status' => $consultation->status,
+            ]);
+        }
+
+        return back()->with('success', $message);
     }
 
     public function logout(Request $request): RedirectResponse
@@ -920,6 +933,32 @@ class AdminController extends Controller
         } catch (Throwable $exception) {
             Log::warning(
                 'Sinkronisasi dashboard realtime gagal.',
+                [
+                    'consultation_id' =>
+                        $consultation->id,
+                    'exception' =>
+                        $exception::class,
+                ]
+            );
+        }
+    }
+
+    private function broadcastInboxActivity(
+        Consultation $consultation,
+        string $activityType
+    ): void {
+        try {
+            event(
+                new AdminInboxActivity(
+                    $consultation->fresh([
+                        'lastMessage',
+                    ]),
+                    $activityType
+                )
+            );
+        } catch (Throwable $exception) {
+            Log::warning(
+                'Sinkronisasi inbox realtime gagal.',
                 [
                     'consultation_id' =>
                         $consultation->id,

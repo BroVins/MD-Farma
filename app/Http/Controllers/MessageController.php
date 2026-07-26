@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Events\AdminDashboardActivity;
+use App\Events\AdminInboxActivity;
 use App\Events\MessageSent;
 use App\Models\AnalyticsEvent;
 use App\Models\Consultation;
@@ -81,6 +82,8 @@ class MessageController extends Controller
                 $consultation->forceFill([
                     'last_message_at' =>
                         $message->created_at,
+                    'last_message_sender' =>
+                        'user',
                 ])->save();
 
                 AnalyticsEvent::recordOnce(
@@ -120,30 +123,49 @@ class MessageController extends Controller
 
         $validated = $request->validate([
             'message' => [
-                'required',
+                'nullable',
                 'string',
                 'max:2000',
+                'required_without:image',
+            ],
+            'image' => [
+                'nullable',
+                'image',
+                'mimes:jpg,jpeg,png,webp',
+                'max:2048',
             ],
         ]);
+
+        $imagePath = $request
+            ->file('image')
+            ?->store(
+                'consultations/'
+                    .$consultation->public_id,
+                'local'
+            );
 
         $message = DB::transaction(
             function () use (
                 $request,
                 $consultation,
-                $validated
+                $validated,
+                $imagePath
             ): Message {
                 $message = $consultation
                     ->messages()
                     ->create([
                         'sender' => 'admin',
                         'message' =>
-                            $validated['message'],
-                        'image' => null,
+                            $validated['message']
+                            ?? null,
+                        'image' => $imagePath,
                     ]);
 
                 $changes = [
                     'last_message_at' =>
                         $message->created_at,
+                    'last_message_sender' =>
+                        'admin',
                 ];
 
                 if (
@@ -166,6 +188,8 @@ class MessageController extends Controller
                     [
                         'message_id' =>
                             $message->id,
+                        'has_attachment' =>
+                            $imagePath !== null,
                     ],
                     'message:'.$message->id
                 );
@@ -235,6 +259,11 @@ class MessageController extends Controller
             $message
         );
 
+        $this->broadcastInboxActivity(
+            $consultation,
+            $message
+        );
+
         if ($request->expectsJson()) {
             return response()->json([
                 'success' => true,
@@ -253,6 +282,37 @@ class MessageController extends Controller
             'chat.show',
             $consultation
         );
+    }
+
+    private function broadcastInboxActivity(
+        Consultation $consultation,
+        Message $message
+    ): void {
+        try {
+            event(
+                new AdminInboxActivity(
+                    $consultation->fresh([
+                        'lastMessage',
+                    ]),
+                    $message->sender === 'user'
+                        ? 'patient_message'
+                        : 'admin_reply',
+                    $message
+                )
+            );
+        } catch (Throwable $exception) {
+            Log::warning(
+                'Sinkronisasi inbox realtime gagal.',
+                [
+                    'consultation_id' =>
+                        $consultation->id,
+                    'message_id' =>
+                        $message->id,
+                    'exception' =>
+                        $exception::class,
+                ]
+            );
+        }
     }
 
     private function broadcastDashboardActivity(

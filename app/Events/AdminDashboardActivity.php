@@ -117,7 +117,7 @@ class AdminDashboardActivity implements ShouldBroadcastNow
                         ->last_message_at
                         ?->toIso8601String(),
                 'chat_url' => route(
-                    'chat.show',
+                    'admin.inbox.show',
                     $this->consultation,
                     false
                 ),

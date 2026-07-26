@@ -15,4 +15,11 @@ class Admin extends Authenticatable
         'password',
         'remember_token',
     ];
+
+    public function consultationReads()
+    {
+        return $this->hasMany(
+            AdminConsultationRead::class
+        );
+    }
 }

@@ -95,9 +95,9 @@
         <td>
             <a
                 class="chat-link"
-                href="{{ route('chat.show', $item) }}"
+                href="{{ route('admin.inbox.show', $item) }}"
             >
-                Buka Chat →
+                Buka di Inbox →
             </a>
         </td>
     </tr>

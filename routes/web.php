@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AdminInboxController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\ConsultationController;
 use App\Http\Controllers\HomeController;
@@ -66,6 +67,49 @@ Route::prefix('admin')
 
         Route::middleware('auth:admin')
             ->group(function (): void {
+                /*
+                |----------------------------------------------------------
+                | Inbox operasional admin
+                |----------------------------------------------------------
+                */
+
+                Route::get(
+                    '/inbox',
+                    [AdminInboxController::class, 'index']
+                )->name('inbox');
+
+                Route::get(
+                    '/inbox/live',
+                    [AdminInboxController::class, 'liveData']
+                )
+                    ->middleware('throttle:180,1')
+                    ->name('inbox.live');
+
+                Route::get(
+                    '/inbox/{consultation:public_id}',
+                    [AdminInboxController::class, 'show']
+                )->name('inbox.show');
+
+                Route::get(
+                    '/inbox/{consultation:public_id}/conversation',
+                    [AdminInboxController::class, 'conversation']
+                )
+                    ->middleware('throttle:180,1')
+                    ->name('inbox.conversation');
+
+                Route::post(
+                    '/inbox/{consultation:public_id}/read',
+                    [AdminInboxController::class, 'markRead']
+                )
+                    ->middleware('throttle:180,1')
+                    ->name('inbox.read');
+
+                /*
+                |----------------------------------------------------------
+                | Dashboard analitik
+                |----------------------------------------------------------
+                */
+
                 Route::get(
                     '/dashboard',
                     [AdminController::class, 'dashboard']

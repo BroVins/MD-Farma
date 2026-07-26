@@ -53,3 +53,14 @@ Broadcast::channel(
         ],
     ]
 );
+
+Broadcast::channel(
+    'admin.inbox',
+    fn (mixed $actor): bool =>
+        $actor instanceof Admin,
+    [
+        'guards' => [
+            'admin',
+        ],
+    ]
+);

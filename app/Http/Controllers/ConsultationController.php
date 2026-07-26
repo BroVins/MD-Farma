@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Events\AdminDashboardActivity;
+use App\Events\AdminInboxActivity;
 use App\Models\AnalyticsEvent;
 use App\Models\Consultation;
 use App\Models\ConsultationGuest;
@@ -124,9 +125,20 @@ class ConsultationController extends Controller
         $request->session()->regenerate();
 
         try {
+            $freshConsultation = $consultation->fresh([
+                'lastMessage',
+            ]);
+
             event(
                 new AdminDashboardActivity(
-                    $consultation->fresh(),
+                    $freshConsultation,
+                    'consultation_created'
+                )
+            );
+
+            event(
+                new AdminInboxActivity(
+                    $freshConsultation,
                     'consultation_created'
                 )
             );
