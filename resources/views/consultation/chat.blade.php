@@ -2,11 +2,23 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+    <meta
+        name="csrf-token"
+        content="{{ csrf_token() }}"
+    >
+
     <title>Live Chat Apotek MD Farma</title>
 
+    @vite('resources/js/app.js')
+
     <style>
-        * { box-sizing: border-box; }
+        * {
+            box-sizing: border-box;
+        }
 
         body {
             font-family: Arial, sans-serif;
@@ -66,6 +78,37 @@
         h1 {
             text-align: center;
             color: #198754;
+            margin-bottom: 8px;
+        }
+
+        .connection-row {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .connection-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 14px;
+            color: #4b5563;
+        }
+
+        .connection-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: #d97706;
+        }
+
+        .connection-status.connected
+        .connection-dot {
+            background: #16a34a;
+        }
+
+        .connection-status.disconnected
+        .connection-dot {
+            background: #dc2626;
         }
 
         .patient p {
@@ -104,6 +147,13 @@
             max-width: 100%;
         }
 
+        .message-time {
+            display: block;
+            margin-top: 7px;
+            font-size: 11px;
+            opacity: .8;
+        }
+
         .form-row {
             display: flex;
             gap: 10px;
@@ -130,6 +180,11 @@
             cursor: pointer;
         }
 
+        .send-button:disabled {
+            opacity: .55;
+            cursor: wait;
+        }
+
         .info {
             font-size: 14px;
             color: #666;
@@ -141,6 +196,19 @@
             padding: 12px;
             border-radius: 6px;
             margin-bottom: 18px;
+        }
+
+        .form-error {
+            display: none;
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+        }
+
+        .form-error.visible {
+            display: block;
         }
 
         @media (max-width: 600px) {
@@ -207,6 +275,19 @@
     <main class="container">
         <h1>Live Chat Apotek MD Farma</h1>
 
+        <div class="connection-row">
+            <span
+                id="connectionStatus"
+                class="connection-status"
+                aria-live="polite"
+            >
+                <span class="connection-dot"></span>
+                <span data-status-text>
+                    Menghubungkan realtime...
+                </span>
+            </span>
+        </div>
+
         @if ($errors->any())
             <div class="error-box">
                 @foreach ($errors->all() as $error)
@@ -246,7 +327,11 @@
         <section class="card">
             <h3>Riwayat Chat</h3>
 
-            <div class="chat-box" id="chatBox">
+            <div
+                class="chat-box"
+                id="chatBox"
+                aria-live="polite"
+            >
                 @forelse ($consultation->messages as $chat)
                     <div
                         class="message {{
@@ -254,6 +339,7 @@
                                 ? 'admin'
                                 : ''
                         }}"
+                        data-message-id="{{ $chat->id }}"
                     >
                         <strong>
                             {{
@@ -284,9 +370,18 @@
                                 width="180"
                             >
                         @endif
+
+                        <small class="message-time">
+                            {{
+                                $chat->created_at
+                                    ?->format('H:i')
+                            }}
+                        </small>
                     </div>
                 @empty
-                    <p>Belum ada pesan.</p>
+                    <p data-empty-chat>
+                        Belum ada pesan.
+                    </p>
                 @endforelse
             </div>
         </section>
@@ -295,7 +390,13 @@
             <section class="card">
                 <h3>Balasan Apoteker</h3>
 
+                <div
+                    class="form-error"
+                    data-form-error
+                ></div>
+
                 <form
+                    class="realtime-form"
                     action="{{
                         route(
                             'admin.chat.reply',
@@ -313,6 +414,7 @@
                             value="{{ old('message') }}"
                             placeholder="Balas pasien..."
                             maxlength="2000"
+                            autocomplete="off"
                             required
                         >
 
@@ -329,7 +431,13 @@
             <section class="card">
                 <h3>Kirim Pesan Pasien</h3>
 
+                <div
+                    class="form-error"
+                    data-form-error
+                ></div>
+
                 <form
+                    class="realtime-form"
                     action="{{
                         route(
                             'chat.send',
@@ -348,6 +456,7 @@
                             value="{{ old('message') }}"
                             placeholder="Tulis pesan..."
                             maxlength="2000"
+                            autocomplete="off"
                         >
 
                         <button
@@ -366,19 +475,441 @@
                 </form>
 
                 <p class="info">
-                    Akses chat ini terikat pada sesi browser pasien.
-                    Jangan membagikan perangkat ketika chat sedang aktif.
+                    Akses chat terikat pada sesi browser pasien.
+                    Jangan membagikan perangkat saat chat aktif.
                 </p>
             </section>
         @endif
     </main>
 
     <script>
-        const chatBox = document.getElementById('chatBox');
+        (() => {
+            const consultationPublicId = @json(
+                $consultation->public_id
+            );
 
-        if (chatBox) {
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
+            const channelName =
+                `consultation.${consultationPublicId}`;
+
+            const chatBox =
+                document.getElementById('chatBox');
+
+            const connectionStatus =
+                document.getElementById(
+                    'connectionStatus'
+                );
+
+            let initialized = false;
+            let sessionTimeoutId = null;
+
+            function scrollToBottom() {
+                chatBox.scrollTop =
+                    chatBox.scrollHeight;
+            }
+
+            function setConnectionStatus(
+                state,
+                text
+            ) {
+                connectionStatus.classList.remove(
+                    'connected',
+                    'disconnected'
+                );
+
+                if (state) {
+                    connectionStatus.classList.add(
+                        state
+                    );
+                }
+
+                connectionStatus
+                    .querySelector('[data-status-text]')
+                    .textContent = text;
+            }
+
+            function formatTime(value) {
+                if (!value) {
+                    return '';
+                }
+
+                const date = new Date(value);
+
+                if (Number.isNaN(date.getTime())) {
+                    return '';
+                }
+
+                return new Intl.DateTimeFormat(
+                    'id-ID',
+                    {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                    }
+                ).format(date);
+            }
+
+            function appendMessage(data) {
+                if (!data || !data.id) {
+                    return;
+                }
+
+                const existing =
+                    chatBox.querySelector(
+                        `[data-message-id="${data.id}"]`
+                    );
+
+                if (existing) {
+                    return;
+                }
+
+                chatBox
+                    .querySelector('[data-empty-chat]')
+                    ?.remove();
+
+                const bubble =
+                    document.createElement('div');
+
+                bubble.className =
+                    data.sender === 'admin'
+                        ? 'message admin'
+                        : 'message';
+
+                bubble.dataset.messageId = data.id;
+
+                const sender =
+                    document.createElement('strong');
+
+                sender.textContent =
+                    data.sender === 'admin'
+                        ? 'Apoteker'
+                        : 'Pasien';
+
+                bubble.appendChild(sender);
+
+                if (data.message) {
+                    bubble.appendChild(
+                        document.createElement('br')
+                    );
+
+                    bubble.appendChild(
+                        document.createTextNode(
+                            data.message
+                        )
+                    );
+                }
+
+                if (data.attachment_url) {
+                    const image =
+                        document.createElement('img');
+
+                    image.src = data.attachment_url;
+                    image.alt = 'Lampiran chat';
+                    image.width = 180;
+                    image.loading = 'lazy';
+
+                    bubble.appendChild(image);
+                }
+
+                const time =
+                    document.createElement('small');
+
+                time.className = 'message-time';
+                time.textContent = formatTime(
+                    data.created_at
+                );
+
+                bubble.appendChild(time);
+                chatBox.appendChild(bubble);
+                scrollToBottom();
+            }
+
+            function showFormError(
+                form,
+                message
+            ) {
+                const section =
+                    form.closest('.card');
+
+                const errorBox =
+                    section?.querySelector(
+                        '[data-form-error]'
+                    );
+
+                if (!errorBox) {
+                    return;
+                }
+
+                errorBox.textContent = message;
+                errorBox.classList.add('visible');
+            }
+
+            function clearFormError(form) {
+                const section =
+                    form.closest('.card');
+
+                const errorBox =
+                    section?.querySelector(
+                        '[data-form-error]'
+                    );
+
+                if (!errorBox) {
+                    return;
+                }
+
+                errorBox.textContent = '';
+                errorBox.classList.remove(
+                    'visible'
+                );
+            }
+
+            function scheduleSessionExpiry(
+                expiresAt
+            ) {
+                if (!expiresAt) {
+                    return;
+                }
+
+                window.clearTimeout(
+                    sessionTimeoutId
+                );
+
+                const delay =
+                    new Date(expiresAt).getTime()
+                    - Date.now();
+
+                if (delay <= 0) {
+                    expirePatientSession();
+                    return;
+                }
+
+                sessionTimeoutId =
+                    window.setTimeout(
+                        expirePatientSession,
+                        delay
+                    );
+            }
+
+            function expirePatientSession() {
+                window.Echo?.leave(channelName);
+
+                setConnectionStatus(
+                    'disconnected',
+                    'Sesi pasien telah berakhir'
+                );
+
+                document
+                    .querySelectorAll(
+                        '.realtime-form input, ' +
+                        '.realtime-form button'
+                    )
+                    .forEach((element) => {
+                        element.disabled = true;
+                    });
+            }
+
+            function bindForms() {
+                document
+                    .querySelectorAll(
+                        '.realtime-form'
+                    )
+                    .forEach((form) => {
+                        form.addEventListener(
+                            'submit',
+                            async (event) => {
+                                event.preventDefault();
+                                clearFormError(form);
+
+                                const button =
+                                    form.querySelector(
+                                        'button[type="submit"]'
+                                    );
+
+                                button.disabled = true;
+
+                                try {
+                                    const response =
+                                        await fetch(
+                                            form.action,
+                                            {
+                                                method:
+                                                    'POST',
+                                                body:
+                                                    new FormData(
+                                                        form
+                                                    ),
+                                                credentials:
+                                                    'same-origin',
+                                                headers: {
+                                                    Accept:
+                                                        'application/json',
+                                                    'X-Requested-With':
+                                                        'XMLHttpRequest',
+                                                },
+                                            }
+                                        );
+
+                                    const result =
+                                        await response
+                                            .json()
+                                            .catch(() => ({}));
+
+                                    if (!response.ok) {
+                                        const errors =
+                                            result.errors
+                                                ? Object
+                                                    .values(
+                                                        result.errors
+                                                    )
+                                                    .flat()
+                                                : [];
+
+                                        throw new Error(
+                                            errors[0]
+                                            ?? result.message
+                                            ?? 'Pesan gagal dikirim.'
+                                        );
+                                    }
+
+                                    /*
+                                     * Event Reverb dapat tiba sebelum
+                                     * response HTTP. appendMessage
+                                     * memiliki deduplikasi berdasarkan ID.
+                                     */
+                                    appendMessage(
+                                        result.message
+                                    );
+
+                                    scheduleSessionExpiry(
+                                        result
+                                            .access_expires_at
+                                    );
+
+                                    form.reset();
+
+                                    if (
+                                        !result
+                                            .realtime_delivered
+                                    ) {
+                                        setConnectionStatus(
+                                            'disconnected',
+                                            'Pesan tersimpan; realtime sedang offline'
+                                        );
+                                    }
+                                } catch (error) {
+                                    showFormError(
+                                        form,
+                                        error.message
+                                    );
+                                } finally {
+                                    button.disabled =
+                                        false;
+                                }
+                            }
+                        );
+                    });
+            }
+
+            function initializeRealtime() {
+                if (
+                    initialized
+                    || !window.Echo
+                ) {
+                    return;
+                }
+
+                initialized = true;
+
+                const channel =
+                    window.Echo.private(
+                        channelName
+                    );
+
+                channel.listen(
+                    '.message.sent',
+                    appendMessage
+                );
+
+                const connection =
+                    window.Echo
+                        .connector
+                        ?.pusher
+                        ?.connection;
+
+                connection?.bind(
+                    'connected',
+                    () => {
+                        setConnectionStatus(
+                            'connected',
+                            'Realtime terhubung'
+                        );
+                    }
+                );
+
+                connection?.bind(
+                    'disconnected',
+                    () => {
+                        setConnectionStatus(
+                            'disconnected',
+                            'Realtime terputus'
+                        );
+                    }
+                );
+
+                connection?.bind(
+                    'unavailable',
+                    () => {
+                        setConnectionStatus(
+                            'disconnected',
+                            'Server realtime tidak tersedia'
+                        );
+                    }
+                );
+
+                connection?.bind(
+                    'error',
+                    () => {
+                        setConnectionStatus(
+                            'disconnected',
+                            'Koneksi realtime bermasalah'
+                        );
+                    }
+                );
+            }
+
+            bindForms();
+            scrollToBottom();
+
+            @if (! auth('admin')->check())
+                scheduleSessionExpiry(
+                    @json(
+                        auth('patient')
+                            ->user()
+                            ?->expires_at
+                            ?->toIso8601String()
+                    )
+                );
+            @endif
+
+            if (window.Echo) {
+                initializeRealtime();
+            } else {
+                window.addEventListener(
+                    'md-farma:echo-ready',
+                    initializeRealtime,
+                    {
+                        once: true,
+                    }
+                );
+            }
+
+            window.addEventListener(
+                'beforeunload',
+                () => {
+                    window.Echo?.leave(
+                        channelName
+                    );
+                }
+            );
+        })();
     </script>
 </body>
 </html>
