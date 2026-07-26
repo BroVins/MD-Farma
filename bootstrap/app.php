@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\EnsureConsultationAccess;
+use App\Http\Middleware\EnsurePatientConsultationAccess;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -12,6 +14,14 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->alias([
+            'consultation.access' =>
+                EnsureConsultationAccess::class,
+
+            'consultation.patient' =>
+                EnsurePatientConsultationAccess::class,
+        ]);
+
         $middleware->redirectGuestsTo(
             fn (Request $request): string =>
                 $request->is('admin/*')

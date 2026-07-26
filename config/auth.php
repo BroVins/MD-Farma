@@ -1,26 +1,15 @@
 <?php
 
 use App\Models\Admin;
+use App\Models\ConsultationGuest;
 use App\Models\User;
 
 return [
-
-    /*
-    |--------------------------------------------------------------------------
-    | Authentication Defaults
-    |--------------------------------------------------------------------------
-    */
 
     'defaults' => [
         'guard' => env('AUTH_GUARD', 'web'),
         'passwords' => env('AUTH_PASSWORD_BROKER', 'users'),
     ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Authentication Guards
-    |--------------------------------------------------------------------------
-    */
 
     'guards' => [
         'web' => [
@@ -32,13 +21,16 @@ return [
             'driver' => 'session',
             'provider' => 'admins',
         ],
-    ],
 
-    /*
-    |--------------------------------------------------------------------------
-    | User Providers
-    |--------------------------------------------------------------------------
-    */
+        /*
+         * Guard ini tidak menampilkan halaman login.
+         * Pasien di-login otomatis setelah mengirim formulir.
+         */
+        'patient' => [
+            'driver' => 'session',
+            'provider' => 'consultation_guests',
+        ],
+    ],
 
     'providers' => [
         'users' => [
@@ -50,13 +42,12 @@ return [
             'driver' => 'eloquent',
             'model' => Admin::class,
         ],
-    ],
 
-    /*
-    |--------------------------------------------------------------------------
-    | Resetting Passwords
-    |--------------------------------------------------------------------------
-    */
+        'consultation_guests' => [
+            'driver' => 'eloquent',
+            'model' => ConsultationGuest::class,
+        ],
+    ],
 
     'passwords' => [
         'users' => [
@@ -69,12 +60,6 @@ return [
             'throttle' => 60,
         ],
     ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Password Confirmation Timeout
-    |--------------------------------------------------------------------------
-    */
 
     'password_timeout' => env(
         'AUTH_PASSWORD_TIMEOUT',

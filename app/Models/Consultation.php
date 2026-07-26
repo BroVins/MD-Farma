@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Consultation extends Model
 {
@@ -11,8 +12,31 @@ class Consultation extends Model
         'umur',
         'no_hp',
         'jenis_konsultasi',
-        'status'
+        'status',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(
+            function (Consultation $consultation): void {
+                $consultation->public_id ??=
+                    (string) Str::uuid();
+            }
+        );
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'public_id';
+    }
+
+    public function guest()
+    {
+        return $this->belongsTo(
+            ConsultationGuest::class,
+            'guest_id'
+        );
+    }
 
     public function messages()
     {

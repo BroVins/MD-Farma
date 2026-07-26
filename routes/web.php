@@ -30,20 +30,40 @@ Route::post(
     ->middleware('throttle:10,1')
     ->name('consultation.store');
 
+/*
+|--------------------------------------------------------------------------
+| Chat konsultasi
+|--------------------------------------------------------------------------
+|
+| URL memakai UUID. Middleware tetap memeriksa kepemilikan session pasien,
+| jadi UUID bukan satu-satunya lapisan keamanan.
+|
+*/
+
 Route::get(
-    '/chat/{id}',
+    '/chat/{consultation:public_id}',
     [ChatController::class, 'index']
 )
-    ->whereNumber('id')
+    ->middleware('consultation.access')
     ->name('chat.show');
 
 Route::post(
-    '/chat/{id}/send',
+    '/chat/{consultation:public_id}/send',
     [MessageController::class, 'store']
 )
-    ->whereNumber('id')
-    ->middleware('throttle:30,1')
+    ->middleware([
+        'consultation.patient',
+        'throttle:30,1',
+    ])
     ->name('chat.send');
+
+Route::get(
+    '/chat/{consultation:public_id}/attachment/{message}',
+    [MessageController::class, 'attachment']
+)
+    ->whereNumber('message')
+    ->middleware('consultation.access')
+    ->name('chat.attachment');
 
 /*
 |--------------------------------------------------------------------------
@@ -79,10 +99,9 @@ Route::prefix('admin')
                 )->name('logout');
 
                 Route::post(
-                    '/chat/{id}/reply',
+                    '/chat/{consultation:public_id}/reply',
                     [MessageController::class, 'reply']
                 )
-                    ->whereNumber('id')
                     ->middleware('throttle:30,1')
                     ->name('chat.reply');
             });

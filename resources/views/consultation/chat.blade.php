@@ -270,7 +270,16 @@
 
                         @if ($chat->image)
                             <img
-                                src="{{ asset('storage/'.$chat->image) }}"
+                                src="{{
+                                    route(
+                                        'chat.attachment',
+                                        [
+                                            'consultation' =>
+                                                $consultation,
+                                            'message' => $chat,
+                                        ]
+                                    )
+                                }}"
                                 alt="Lampiran chat"
                                 width="180"
                             >
@@ -290,7 +299,7 @@
                     action="{{
                         route(
                             'admin.chat.reply',
-                            $consultation->id
+                            $consultation
                         )
                     }}"
                     method="POST"
@@ -324,7 +333,7 @@
                     action="{{
                         route(
                             'chat.send',
-                            $consultation->id
+                            $consultation
                         )
                     }}"
                     method="POST"
@@ -357,8 +366,8 @@
                 </form>
 
                 <p class="info">
-                    Pesan akan dibalas oleh apoteker sesuai jam
-                    operasional Apotek MD Farma.
+                    Akses chat ini terikat pada sesi browser pasien.
+                    Jangan membagikan perangkat ketika chat sedang aktif.
                 </p>
             </section>
         @endif

@@ -193,7 +193,7 @@
                                 <td>
                                     <a
                                         class="chat-link"
-                                        href="{{ route('chat.show', $data->id) }}"
+                                        href="{{ route('chat.show', $data) }}"
                                     >
                                         Buka Chat
                                     </a>
