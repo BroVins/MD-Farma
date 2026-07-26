@@ -32,12 +32,24 @@ Broadcast::channel(
             && $actor->expires_at
             && $actor->expires_at->isFuture()
             && (int) $consultation->guest_id
-                === (int) $actor->getAuthIdentifier();
+                === (int) $actor
+                    ->getAuthIdentifier();
     },
     [
         'guards' => [
             'admin',
             'patient',
+        ],
+    ]
+);
+
+Broadcast::channel(
+    'admin.dashboard',
+    fn (mixed $actor): bool =>
+        $actor instanceof Admin,
+    [
+        'guards' => [
+            'admin',
         ],
     ]
 );

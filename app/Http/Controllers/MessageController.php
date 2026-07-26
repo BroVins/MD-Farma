@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\AdminDashboardActivity;
 use App\Events\MessageSent;
 use App\Models\AnalyticsEvent;
 use App\Models\Consultation;
@@ -52,40 +53,52 @@ class MessageController extends Controller
             ],
         ]);
 
-        $imagePath = $request->file('image')?->store(
-            'consultations/'.$consultation->public_id,
-            'local'
-        );
-
-        $message = DB::transaction(function () use (
-            $request,
-            $consultation,
-            $validated,
-            $imagePath
-        ): Message {
-            $message = $consultation->messages()->create([
-                'sender' => 'user',
-                'message' => $validated['message'] ?? null,
-                'image' => $imagePath,
-            ]);
-
-            $consultation->forceFill([
-                'last_message_at' => $message->created_at,
-            ])->save();
-
-            AnalyticsEvent::recordOnce(
-                $request,
-                'patient_message_sent',
-                $consultation,
-                [
-                    'message_id' => $message->id,
-                    'has_attachment' => $imagePath !== null,
-                ],
-                'message:'.$message->id
+        $imagePath = $request
+            ->file('image')
+            ?->store(
+                'consultations/'
+                    .$consultation->public_id,
+                'local'
             );
 
-            return $message;
-        });
+        $message = DB::transaction(
+            function () use (
+                $request,
+                $consultation,
+                $validated,
+                $imagePath
+            ): Message {
+                $message = $consultation
+                    ->messages()
+                    ->create([
+                        'sender' => 'user',
+                        'message' =>
+                            $validated['message']
+                            ?? null,
+                        'image' => $imagePath,
+                    ]);
+
+                $consultation->forceFill([
+                    'last_message_at' =>
+                        $message->created_at,
+                ])->save();
+
+                AnalyticsEvent::recordOnce(
+                    $request,
+                    'patient_message_sent',
+                    $consultation,
+                    [
+                        'message_id' =>
+                            $message->id,
+                        'has_attachment' =>
+                            $imagePath !== null,
+                    ],
+                    'message:'.$message->id
+                );
+
+                return $message;
+            }
+        );
 
         return $this->broadcastAndRespond(
             $request,
@@ -101,44 +114,65 @@ class MessageController extends Controller
         abort_if(
             $consultation->status !== 'aktif',
             409,
-            'Aktifkan kembali konsultasi sebelum membalas.'
+            'Aktifkan kembali konsultasi '
+                .'sebelum membalas.'
         );
 
         $validated = $request->validate([
-            'message' => ['required', 'string', 'max:2000'],
+            'message' => [
+                'required',
+                'string',
+                'max:2000',
+            ],
         ]);
 
-        $message = DB::transaction(function () use (
-            $request,
-            $consultation,
-            $validated
-        ): Message {
-            $message = $consultation->messages()->create([
-                'sender' => 'admin',
-                'message' => $validated['message'],
-                'image' => null,
-            ]);
-
-            $changes = [
-                'last_message_at' => $message->created_at,
-            ];
-
-            if (! $consultation->first_admin_reply_at) {
-                $changes['first_admin_reply_at'] = $message->created_at;
-            }
-
-            $consultation->forceFill($changes)->save();
-
-            AnalyticsEvent::recordOnce(
+        $message = DB::transaction(
+            function () use (
                 $request,
-                'admin_replied',
                 $consultation,
-                ['message_id' => $message->id],
-                'message:'.$message->id
-            );
+                $validated
+            ): Message {
+                $message = $consultation
+                    ->messages()
+                    ->create([
+                        'sender' => 'admin',
+                        'message' =>
+                            $validated['message'],
+                        'image' => null,
+                    ]);
 
-            return $message;
-        });
+                $changes = [
+                    'last_message_at' =>
+                        $message->created_at,
+                ];
+
+                if (
+                    ! $consultation
+                        ->first_admin_reply_at
+                ) {
+                    $changes[
+                        'first_admin_reply_at'
+                    ] = $message->created_at;
+                }
+
+                $consultation
+                    ->forceFill($changes)
+                    ->save();
+
+                AnalyticsEvent::recordOnce(
+                    $request,
+                    'admin_replied',
+                    $consultation,
+                    [
+                        'message_id' =>
+                            $message->id,
+                    ],
+                    'message:'.$message->id
+                );
+
+                return $message;
+            }
+        );
 
         return $this->broadcastAndRespond(
             $request,
@@ -152,17 +186,21 @@ class MessageController extends Controller
         Message $message
     ): StreamedResponse {
         abort_unless(
-            (int) $message->consultation_id === (int) $consultation->id,
+            (int) $message->consultation_id
+                === (int) $consultation->id,
             404
         );
 
         abort_unless(
             $message->image
-            && Storage::disk('local')->exists($message->image),
+            && Storage::disk('local')
+                ->exists($message->image),
             404
         );
 
-        return Storage::disk('local')->response($message->image);
+        return Storage::disk('local')->response(
+            $message->image
+        );
     }
 
     private function broadcastAndRespond(
@@ -182,26 +220,67 @@ class MessageController extends Controller
             $broadcasted = false;
 
             Log::warning(
-                'Pesan tersimpan, tetapi broadcast realtime gagal.',
+                'Pesan tersimpan, tetapi '
+                    .'broadcast realtime gagal.',
                 [
                     'message_id' => $message->id,
-                    'exception' => $exception::class,
+                    'exception' =>
+                        $exception::class,
                 ]
             );
         }
 
+        $this->broadcastDashboardActivity(
+            $consultation,
+            $message
+        );
+
         if ($request->expectsJson()) {
             return response()->json([
                 'success' => true,
-                'realtime_delivered' => $broadcasted,
+                'realtime_delivered' =>
+                    $broadcasted,
                 'message' => $payload,
-                'access_expires_at' => Auth::guard('patient')
-                    ->user()
-                    ?->expires_at
-                    ?->toIso8601String(),
+                'access_expires_at' =>
+                    Auth::guard('patient')
+                        ->user()
+                        ?->expires_at
+                        ?->toIso8601String(),
             ], 201);
         }
 
-        return redirect()->route('chat.show', $consultation);
+        return redirect()->route(
+            'chat.show',
+            $consultation
+        );
+    }
+
+    private function broadcastDashboardActivity(
+        Consultation $consultation,
+        Message $message
+    ): void {
+        try {
+            event(
+                new AdminDashboardActivity(
+                    $consultation->fresh(),
+                    $message->sender === 'user'
+                        ? 'patient_message'
+                        : 'admin_reply',
+                    $message
+                )
+            );
+        } catch (Throwable $exception) {
+            Log::warning(
+                'Sinkronisasi aktivitas dashboard gagal.',
+                [
+                    'consultation_id' =>
+                        $consultation->id,
+                    'message_id' =>
+                        $message->id,
+                    'exception' =>
+                        $exception::class,
+                ]
+            );
+        }
     }
 }

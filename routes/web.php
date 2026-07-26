@@ -7,7 +7,10 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MessageController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get(
+    '/',
+    [HomeController::class, 'index']
+)->name('home');
 
 Route::get(
     '/konsultasi',
@@ -32,7 +35,10 @@ Route::post(
     '/chat/{consultation:public_id}/send',
     [MessageController::class, 'store']
 )
-    ->middleware(['consultation.patient', 'throttle:30,1'])
+    ->middleware([
+        'consultation.patient',
+        'throttle:30,1',
+    ])
     ->name('chat.send');
 
 Route::get(
@@ -64,6 +70,13 @@ Route::prefix('admin')
                     '/dashboard',
                     [AdminController::class, 'dashboard']
                 )->name('dashboard');
+
+                Route::get(
+                    '/dashboard/live',
+                    [AdminController::class, 'liveData']
+                )
+                    ->middleware('throttle:120,1')
+                    ->name('dashboard.live');
 
                 Route::post(
                     '/logout',

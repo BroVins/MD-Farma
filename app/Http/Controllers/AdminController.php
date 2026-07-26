@@ -2,15 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\AdminDashboardActivity;
 use App\Models\AnalyticsEvent;
 use App\Models\Consultation;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class AdminController extends Controller
 {
@@ -43,6 +48,112 @@ class AdminController extends Controller
 
     public function dashboard(Request $request): View
     {
+        return view(
+            'admin.dashboard',
+            $this->buildDashboardData($request)
+        );
+    }
+
+    public function liveData(Request $request): JsonResponse
+    {
+        $data = $this->buildDashboardData($request);
+
+        return response()->json([
+            'kpis' => [
+                'totalConsultation' => $data['totalConsultation'],
+                'activeChat' => $data['activeChat'],
+                'completedChat' => $data['completedChat'],
+                'averageResponseLabel' =>
+                    $data['averageResponseLabel'],
+                'formViews' => $data['formViews'],
+                'uniqueFormSessions' =>
+                    $data['uniqueFormSessions'],
+                'trackedConsultations' =>
+                    $data['trackedConsultations'],
+                'uniqueCreatedSessions' =>
+                    $data['uniqueCreatedSessions'],
+                'chatOpens' => $data['chatOpens'],
+                'conversionRate' => $data['conversionRate'],
+            ],
+            'types' => [
+                'resep' => $data['resep'],
+                'nonResep' => $data['nonResep'],
+            ],
+            'trend' => $data['trend'],
+            'busyMetrics' => $data['busyMetrics'],
+            'compactHourly' => $data['compactHourly'],
+            'calendar' => $data['calendar'],
+            'tableHtml' => view(
+                'admin.partials.consultation-table-rows',
+                [
+                    'consultations' => $data['consultations'],
+                    'timezone' => $data['timezone'],
+                ]
+            )->render(),
+            'paginationHtml' => view(
+                'admin.partials.consultation-pagination',
+                [
+                    'consultations' => $data['consultations'],
+                ]
+            )->render(),
+            'syncedAt' => CarbonImmutable::now(
+                $data['timezone']
+            )->format('H.i.s').' WIB',
+        ]);
+    }
+
+    public function updateStatus(
+        Request $request,
+        Consultation $consultation
+    ): RedirectResponse {
+        $validated = $request->validate([
+            'status' => ['required', 'in:aktif,selesai'],
+        ]);
+
+        $consultation->forceFill([
+            'status' => $validated['status'],
+            'closed_at' => $validated['status'] === 'selesai'
+                ? now()
+                : null,
+        ])->save();
+
+        AnalyticsEvent::recordOnce(
+            $request,
+            $validated['status'] === 'selesai'
+                ? 'consultation_closed'
+                : 'consultation_reopened',
+            $consultation,
+            ['status' => $validated['status']],
+            'status:'.$validated['status'].':'
+                .$consultation->updated_at->timestamp
+        );
+
+        $this->broadcastDashboardActivity(
+            $consultation,
+            'status_changed'
+        );
+
+        return back()->with(
+            'success',
+            $validated['status'] === 'selesai'
+                ? 'Konsultasi ditandai selesai.'
+                : 'Konsultasi diaktifkan kembali.'
+        );
+    }
+
+    public function logout(Request $request): RedirectResponse
+    {
+        Auth::guard('admin')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()
+            ->route('admin.login')
+            ->with('success', 'Anda berhasil logout.');
+    }
+
+    private function buildDashboardData(Request $request): array
+    {
         $timezone = config('analytics.timezone', 'Asia/Jakarta');
         $range = $this->resolvePeriod($request, $timezone);
 
@@ -64,8 +175,12 @@ class AdminController extends Controller
         $totalConsultation = $records->count();
         $activeChat = $records->where('status', 'aktif')->count();
         $completedChat = $records->where('status', 'selesai')->count();
-        $resep = $records->where('jenis_konsultasi', 'resep')->count();
-        $nonResep = $records->where('jenis_konsultasi', 'non_resep')->count();
+        $resep = $records
+            ->where('jenis_konsultasi', 'resep')
+            ->count();
+        $nonResep = $records
+            ->where('jenis_konsultasi', 'non_resep')
+            ->count();
 
         $responseSeconds = $records
             ->filter(
@@ -115,53 +230,33 @@ class AdminController extends Controller
             ? min(
                 100,
                 round(
-                    ($uniqueCreatedSessions / $uniqueFormSessions) * 100,
+                    ($uniqueCreatedSessions / $uniqueFormSessions)
+                    * 100,
                     1
                 )
             )
             : 0.0;
+
+        $hourlyDistribution = $this->buildHourlyDistribution(
+            $records,
+            $timezone
+        );
 
         $search = trim((string) $request->query('search', ''));
         $type = (string) $request->query('type', '');
         $status = (string) $request->query('status', '');
         $sort = (string) $request->query('sort', 'latest');
 
-        $tableQuery = Consultation::query()
-            ->withCount('messages')
-            ->whereBetween('created_at', [
-                $range['start_utc'],
-                $range['end_utc'],
-            ]);
+        $consultations = $this->buildTablePaginator(
+            $request,
+            $range,
+            $search,
+            $type,
+            $status,
+            $sort
+        );
 
-        if ($search !== '') {
-            $tableQuery->where(function ($query) use ($search): void {
-                $query
-                    ->where('nama', 'like', '%'.$search.'%')
-                    ->orWhere('no_hp', 'like', '%'.$search.'%');
-            });
-        }
-
-        if (in_array($type, ['resep', 'non_resep'], true)) {
-            $tableQuery->where('jenis_konsultasi', $type);
-        }
-
-        if (in_array($status, ['aktif', 'selesai'], true)) {
-            $tableQuery->where('status', $status);
-        }
-
-        match ($sort) {
-            'oldest' => $tableQuery->oldest('created_at'),
-            'last_activity' => $tableQuery->orderByRaw(
-                'COALESCE(last_message_at, created_at) DESC'
-            ),
-            default => $tableQuery->latest('created_at'),
-        };
-
-        $consultations = $tableQuery
-            ->paginate(12)
-            ->withQueryString();
-
-        return view('admin.dashboard', [
+        return [
             'timezone' => $timezone,
             'period' => $range['period'],
             'periodLabel' => $range['label'],
@@ -186,9 +281,9 @@ class AdminController extends Controller
                 $records,
                 $timezone
             ),
-            'hourlyDistribution' => $this->buildHourlyDistribution(
-                $records,
-                $timezone
+            'hourlyDistribution' => $hourlyDistribution,
+            'compactHourly' => $this->buildCompactHourly(
+                $hourlyDistribution
             ),
             'formViews' => $formViews,
             'uniqueFormSessions' => $uniqueFormSessions,
@@ -196,58 +291,70 @@ class AdminController extends Controller
             'uniqueCreatedSessions' => $uniqueCreatedSessions,
             'chatOpens' => $chatOpens,
             'conversionRate' => $conversionRate,
-            'calendar' => $this->buildCalendar($request, $timezone),
+            'calendar' => $this->buildCalendar(
+                $request,
+                $timezone
+            ),
             'consultations' => $consultations,
             'search' => $search,
             'type' => $type,
             'status' => $status,
             'sort' => $sort,
-        ]);
+        ];
     }
 
-    public function updateStatus(
+    private function buildTablePaginator(
         Request $request,
-        Consultation $consultation
-    ): RedirectResponse {
-        $validated = $request->validate([
-            'status' => ['required', 'in:aktif,selesai'],
-        ]);
+        array $range,
+        string $search,
+        string $type,
+        string $status,
+        string $sort
+    ): LengthAwarePaginator {
+        $tableQuery = Consultation::query()
+            ->withCount('messages')
+            ->whereBetween('created_at', [
+                $range['start_utc'],
+                $range['end_utc'],
+            ]);
 
-        $consultation->forceFill([
-            'status' => $validated['status'],
-            'closed_at' => $validated['status'] === 'selesai'
-                ? now()
-                : null,
-        ])->save();
+        if ($search !== '') {
+            $tableQuery->where(
+                function ($query) use ($search): void {
+                    $query
+                        ->where('nama', 'like', '%'.$search.'%')
+                        ->orWhere(
+                            'no_hp',
+                            'like',
+                            '%'.$search.'%'
+                        );
+                }
+            );
+        }
 
-        AnalyticsEvent::recordOnce(
-            $request,
-            $validated['status'] === 'selesai'
-                ? 'consultation_closed'
-                : 'consultation_reopened',
-            $consultation,
-            ['status' => $validated['status']],
-            'status:'.$validated['status'].':'
-                .$consultation->updated_at->timestamp
-        );
+        if (in_array($type, ['resep', 'non_resep'], true)) {
+            $tableQuery->where('jenis_konsultasi', $type);
+        }
 
-        return back()->with(
-            'success',
-            $validated['status'] === 'selesai'
-                ? 'Konsultasi ditandai selesai.'
-                : 'Konsultasi diaktifkan kembali.'
-        );
-    }
+        if (in_array($status, ['aktif', 'selesai'], true)) {
+            $tableQuery->where('status', $status);
+        }
 
-    public function logout(Request $request): RedirectResponse
-    {
-        Auth::guard('admin')->logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        match ($sort) {
+            'oldest' => $tableQuery->oldest('created_at'),
+            'last_activity' => $tableQuery->orderByRaw(
+                'COALESCE(last_message_at, created_at) DESC'
+            ),
+            default => $tableQuery->latest('created_at'),
+        };
 
-        return redirect()
-            ->route('admin.login')
-            ->with('success', 'Anda berhasil logout.');
+        $paginator = $tableQuery->paginate(12);
+
+        $paginator
+            ->withPath(route('admin.dashboard'))
+            ->appends($request->except('page'));
+
+        return $paginator;
     }
 
     private function resolvePeriod(
@@ -273,8 +380,12 @@ class AdminController extends Controller
                 break;
 
             case 'week':
-                $start = $now->startOfWeek(CarbonInterface::MONDAY);
-                $end = $now->endOfWeek(CarbonInterface::SUNDAY);
+                $start = $now->startOfWeek(
+                    CarbonInterface::MONDAY
+                );
+                $end = $now->endOfWeek(
+                    CarbonInterface::SUNDAY
+                );
                 break;
 
             case 'year':
@@ -301,7 +412,7 @@ class AdminController extends Controller
                         ),
                         $timezone
                     )->endOfDay();
-                } catch (\Throwable) {
+                } catch (Throwable) {
                     $start = $now->subDays(29)->startOfDay();
                     $end = $now->endOfDay();
                 }
@@ -324,7 +435,8 @@ class AdminController extends Controller
         }
 
         $label = $start->isSameDay($end)
-            ? $start->locale('id')->isoFormat('dddd, D MMMM YYYY')
+            ? $start->locale('id')
+                ->isoFormat('dddd, D MMMM YYYY')
             : $start->locale('id')->isoFormat('D MMM YYYY')
                 .' – '
                 .$end->locale('id')->isoFormat('D MMM YYYY');
@@ -352,7 +464,9 @@ class AdminController extends Controller
 
         if ($period === 'today') {
             for ($hour = 0; $hour < 24; $hour++) {
-                $key = $start->setHour($hour)->format('Y-m-d-H');
+                $key = $start->setHour($hour)
+                    ->format('Y-m-d-H');
+
                 $indexes[$key] = count($labels);
                 $labels[] = sprintf('%02d.00', $hour);
                 $values[] = 0;
@@ -458,24 +572,31 @@ class AdminController extends Controller
         $groups = [
             'day' => $records->groupBy(
                 fn (Consultation $item): string =>
-                    $this->toLocal($item->created_at, $timezone)
-                        ->locale('id')
-                        ->isoFormat('dddd')
+                    $this->toLocal(
+                        $item->created_at,
+                        $timezone
+                    )->locale('id')->isoFormat('dddd')
             ),
             'date' => $records->groupBy(
                 fn (Consultation $item): string =>
-                    $this->toLocal($item->created_at, $timezone)
-                        ->format('Y-m-d')
+                    $this->toLocal(
+                        $item->created_at,
+                        $timezone
+                    )->format('Y-m-d')
             ),
             'month' => $records->groupBy(
                 fn (Consultation $item): string =>
-                    $this->toLocal($item->created_at, $timezone)
-                        ->format('Y-m')
+                    $this->toLocal(
+                        $item->created_at,
+                        $timezone
+                    )->format('Y-m')
             ),
             'hour' => $records->groupBy(
                 fn (Consultation $item): string =>
-                    $this->toLocal($item->created_at, $timezone)
-                        ->format('H')
+                    $this->toLocal(
+                        $item->created_at,
+                        $timezone
+                    )->format('H')
             ),
         ];
 
@@ -483,11 +604,12 @@ class AdminController extends Controller
 
         foreach ($groups as $name => $group) {
             $sorted = $group->sortByDesc(
-                fn (Collection $items): int => $items->count()
+                fn (Collection $items): int =>
+                    $items->count()
             );
-            $key = $sorted->keys()->first();
+
             $top[$name] = [
-                'key' => $key,
+                'key' => $sorted->keys()->first(),
                 'total' => $sorted->first()?->count() ?? 0,
             ];
         }
@@ -502,7 +624,8 @@ class AdminController extends Controller
                     '!Y-m-d',
                     (string) $top['date']['key'],
                     $timezone
-                )->locale('id')->isoFormat('D MMMM YYYY'),
+                )->locale('id')
+                    ->isoFormat('D MMMM YYYY'),
                 'total' => $top['date']['total'],
             ],
             'month' => [
@@ -510,7 +633,8 @@ class AdminController extends Controller
                     '!Y-m',
                     (string) $top['month']['key'],
                     $timezone
-                )->locale('id')->isoFormat('MMMM YYYY'),
+                )->locale('id')
+                    ->isoFormat('MMMM YYYY'),
                 'total' => $top['month']['total'],
             ],
             'hour' => [
@@ -542,10 +666,102 @@ class AdminController extends Controller
         return collect($hours)->map(
             fn (int $total, int $hour): array => [
                 'hour' => sprintf('%02d', $hour),
-                'label' => sprintf('%02d.00', $hour),
+                'label' => sprintf(
+                    '%02d.00–%02d.59 WIB',
+                    $hour,
+                    $hour
+                ),
                 'total' => $total,
             ]
         )->values()->all();
+    }
+
+    private function buildCompactHourly(array $hours): array
+    {
+        $total = max(
+            1,
+            (int) collect($hours)->sum('total')
+        );
+
+        $ranges = [
+            [
+                'label' => 'Dini hari',
+                'range' => '00.00–05.59',
+                'start' => 0,
+                'end' => 5,
+            ],
+            [
+                'label' => 'Pagi',
+                'range' => '06.00–11.59',
+                'start' => 6,
+                'end' => 11,
+            ],
+            [
+                'label' => 'Siang–Sore',
+                'range' => '12.00–17.59',
+                'start' => 12,
+                'end' => 17,
+            ],
+            [
+                'label' => 'Malam',
+                'range' => '18.00–23.59',
+                'start' => 18,
+                'end' => 23,
+            ],
+        ];
+
+        $periods = collect($ranges)->map(
+            function (array $range) use (
+                $hours,
+                $total
+            ): array {
+                $count = collect($hours)
+                    ->slice(
+                        $range['start'],
+                        $range['end']
+                        - $range['start']
+                        + 1
+                    )
+                    ->sum('total');
+
+                return [
+                    'label' => $range['label'],
+                    'range' => $range['range'],
+                    'total' => (int) $count,
+                    'share' => round(
+                        ((int) $count / $total) * 100,
+                        1
+                    ),
+                ];
+            }
+        )->values()->all();
+
+        $topHours = collect($hours)
+            ->filter(
+                fn (array $hour): bool =>
+                    $hour['total'] > 0
+            )
+            ->sortByDesc('total')
+            ->take(6)
+            ->values();
+
+        $maximum = max(
+            1,
+            (int) $topHours->max('total')
+        );
+
+        return [
+            'periods' => $periods,
+            'topHours' => $topHours->map(
+                fn (array $hour): array => [
+                    ...$hour,
+                    'width' => round(
+                        ($hour['total'] / $maximum) * 100,
+                        1
+                    ),
+                ]
+            )->all(),
+        ];
     }
 
     private function buildCalendar(
@@ -557,12 +773,16 @@ class AdminController extends Controller
                 '!Y-m',
                 (string) $request->query(
                     'calendar_month',
-                    CarbonImmutable::now($timezone)->format('Y-m')
+                    CarbonImmutable::now(
+                        $timezone
+                    )->format('Y-m')
                 ),
                 $timezone
             )->startOfMonth();
-        } catch (\Throwable) {
-            $start = CarbonImmutable::now($timezone)->startOfMonth();
+        } catch (Throwable) {
+            $start = CarbonImmutable::now(
+                $timezone
+            )->startOfMonth();
         }
 
         $end = $start->endOfMonth();
@@ -572,19 +792,27 @@ class AdminController extends Controller
                 $start->setTimezone('UTC'),
                 $end->setTimezone('UTC'),
             ])
-            ->get(['id', 'jenis_konsultasi', 'created_at']);
+            ->get([
+                'id',
+                'jenis_konsultasi',
+                'created_at',
+            ]);
 
         $grouped = $records->groupBy(
             fn (Consultation $item): string =>
-                $this->toLocal($item->created_at, $timezone)
-                    ->format('Y-m-d')
+                $this->toLocal(
+                    $item->created_at,
+                    $timezone
+                )->format('Y-m-d')
         );
 
         $maximum = max(
             1,
             (int) $grouped
-                ->map(fn (Collection $items): int => $items->count())
-                ->max()
+                ->map(
+                    fn (Collection $items): int =>
+                        $items->count()
+                )->max()
         );
 
         $cells = array_fill(
@@ -593,7 +821,11 @@ class AdminController extends Controller
             null
         );
 
-        for ($day = 1; $day <= $start->daysInMonth; $day++) {
+        for (
+            $day = 1;
+            $day <= $start->daysInMonth;
+            $day++
+        ) {
             $date = $start->setDay($day);
             $items = $grouped->get(
                 $date->format('Y-m-d'),
@@ -602,8 +834,10 @@ class AdminController extends Controller
 
             $hours = $items->groupBy(
                 fn (Consultation $item): string =>
-                    $this->toLocal($item->created_at, $timezone)
-                        ->format('H')
+                    $this->toLocal(
+                        $item->created_at,
+                        $timezone
+                    )->format('H')
             );
 
             $busyHour = $hours->isEmpty()
@@ -622,11 +856,15 @@ class AdminController extends Controller
                     ->isoFormat('dddd, D MMMM YYYY'),
                 'total' => $total,
                 'resep' => $items
-                    ->where('jenis_konsultasi', 'resep')
-                    ->count(),
+                    ->where(
+                        'jenis_konsultasi',
+                        'resep'
+                    )->count(),
                 'non_resep' => $items
-                    ->where('jenis_konsultasi', 'non_resep')
-                    ->count(),
+                    ->where(
+                        'jenis_konsultasi',
+                        'non_resep'
+                    )->count(),
                 'busiest_hour' => $busyHour === null
                     ? 'Belum ada data'
                     : sprintf(
@@ -640,7 +878,9 @@ class AdminController extends Controller
                         1,
                         min(
                             4,
-                            (int) ceil(($total / $maximum) * 4)
+                            (int) ceil(
+                                ($total / $maximum) * 4
+                            )
                         )
                     ),
                 'is_today' => $date->isToday(),
@@ -655,11 +895,39 @@ class AdminController extends Controller
             'label' => $start
                 ->locale('id')
                 ->isoFormat('MMMM YYYY'),
-            'previous' => $start->subMonth()->format('Y-m'),
-            'next' => $start->addMonth()->format('Y-m'),
+            'previous' => $start
+                ->subMonth()
+                ->format('Y-m'),
+            'next' => $start
+                ->addMonth()
+                ->format('Y-m'),
             'cells' => $cells,
             'total' => $records->count(),
         ];
+    }
+
+    private function broadcastDashboardActivity(
+        Consultation $consultation,
+        string $activityType
+    ): void {
+        try {
+            event(
+                new AdminDashboardActivity(
+                    $consultation->fresh(),
+                    $activityType
+                )
+            );
+        } catch (Throwable $exception) {
+            Log::warning(
+                'Sinkronisasi dashboard realtime gagal.',
+                [
+                    'consultation_id' =>
+                        $consultation->id,
+                    'exception' =>
+                        $exception::class,
+                ]
+            );
+        }
     }
 
     private function toLocal(
