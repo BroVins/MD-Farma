@@ -7,37 +7,83 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MessageController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [HomeController::class, 'index'])
-    ->name('home');
+/*
+|--------------------------------------------------------------------------
+| Halaman publik
+|--------------------------------------------------------------------------
+*/
 
-Route::get('/konsultasi', [ConsultationController::class, 'create'])
-    ->name('consultation.create');
+Route::get(
+    '/',
+    [HomeController::class, 'index']
+)->name('home');
 
-Route::post('/konsultasi', [ConsultationController::class, 'store'])
+Route::get(
+    '/konsultasi',
+    [ConsultationController::class, 'create']
+)->name('consultation.create');
+
+Route::post(
+    '/konsultasi',
+    [ConsultationController::class, 'store']
+)
+    ->middleware('throttle:10,1')
     ->name('consultation.store');
 
-Route::get('/chat/{id}', [ChatController::class, 'index'])
+Route::get(
+    '/chat/{id}',
+    [ChatController::class, 'index']
+)
     ->whereNumber('id')
     ->name('chat.show');
 
-Route::post('/chat/{id}/send', [MessageController::class, 'store'])
+Route::post(
+    '/chat/{id}/send',
+    [MessageController::class, 'store']
+)
     ->whereNumber('id')
+    ->middleware('throttle:30,1')
     ->name('chat.send');
 
-Route::prefix('admin')->name('admin.')->group(function (): void {
-    Route::get('/login', [AdminController::class, 'login'])
-        ->name('login');
+/*
+|--------------------------------------------------------------------------
+| Admin
+|--------------------------------------------------------------------------
+*/
 
-    Route::post('/login', [AdminController::class, 'authenticate'])
-        ->name('authenticate');
+Route::prefix('admin')
+    ->name('admin.')
+    ->group(function (): void {
+        Route::get(
+            '/login',
+            [AdminController::class, 'login']
+        )->name('login');
 
-    Route::get('/dashboard', [AdminController::class, 'dashboard'])
-        ->name('dashboard');
+        Route::post(
+            '/login',
+            [AdminController::class, 'authenticate']
+        )
+            ->middleware('throttle:5,1')
+            ->name('authenticate');
 
-    Route::post('/logout', [AdminController::class, 'logout'])
-        ->name('logout');
+        Route::middleware('auth:admin')
+            ->group(function (): void {
+                Route::get(
+                    '/dashboard',
+                    [AdminController::class, 'dashboard']
+                )->name('dashboard');
 
-    Route::post('/chat/{id}/reply', [MessageController::class, 'reply'])
-        ->whereNumber('id')
-        ->name('chat.reply');
-});
+                Route::post(
+                    '/logout',
+                    [AdminController::class, 'logout']
+                )->name('logout');
+
+                Route::post(
+                    '/chat/{id}/reply',
+                    [MessageController::class, 'reply']
+                )
+                    ->whereNumber('id')
+                    ->middleware('throttle:30,1')
+                    ->name('chat.reply');
+            });
+    });

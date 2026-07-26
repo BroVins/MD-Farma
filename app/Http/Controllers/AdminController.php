@@ -2,18 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Admin;
 use App\Models\Consultation;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\View\View;
+use Illuminate\Support\Facades\Auth;
 
 class AdminController extends Controller
 {
-    public function login(Request $request): View|RedirectResponse
+    public function login(): View|RedirectResponse
     {
-        if ($request->session()->has('admin_id')) {
+        if (Auth::guard('admin')->check()) {
             return redirect()->route('admin.dashboard');
         }
 
@@ -22,53 +21,67 @@ class AdminController extends Controller
 
     public function authenticate(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'username' => ['required', 'string'],
-            'password' => ['required', 'string'],
+        $credentials = $request->validate([
+            'username' => [
+                'required',
+                'string',
+            ],
+            'password' => [
+                'required',
+                'string',
+            ],
         ]);
 
-        $admin = Admin::where('username', $validated['username'])->first();
-
-        if (! $admin || ! Hash::check($validated['password'], $admin->password)) {
+        if (! Auth::guard('admin')->attempt($credentials)) {
             return back()
                 ->withInput($request->only('username'))
                 ->with('error', 'Username atau password salah.');
         }
 
         $request->session()->regenerate();
-        $request->session()->put([
-            'admin_id' => $admin->id,
-            'admin_username' => $admin->username,
-        ]);
 
-        return redirect()->route('admin.dashboard');
+        return redirect()->intended(
+            route('admin.dashboard')
+        );
     }
 
-    public function dashboard(Request $request): View|RedirectResponse
+    public function dashboard(): View
     {
-        if (! $request->session()->has('admin_id')) {
-            return redirect()
-                ->route('admin.login')
-                ->with('error', 'Silakan login sebagai admin terlebih dahulu.');
-        }
-
         $totalConsultation = Consultation::count();
-        $activeChat = Consultation::where('status', 'aktif')->count();
-        $resep = Consultation::where('jenis_konsultasi', 'resep')->count();
-        $nonResep = Consultation::where('jenis_konsultasi', 'non_resep')->count();
+
+        $activeChat = Consultation::where(
+            'status',
+            'aktif'
+        )->count();
+
+        $resep = Consultation::where(
+            'jenis_konsultasi',
+            'resep'
+        )->count();
+
+        $nonResep = Consultation::where(
+            'jenis_konsultasi',
+            'non_resep'
+        )->count();
+
         $consultations = Consultation::latest()->get();
 
-        return view('admin.dashboard', compact(
-            'totalConsultation',
-            'activeChat',
-            'resep',
-            'nonResep',
-            'consultations'
-        ));
+        return view(
+            'admin.dashboard',
+            compact(
+                'totalConsultation',
+                'activeChat',
+                'resep',
+                'nonResep',
+                'consultations'
+            )
+        );
     }
 
     public function logout(Request $request): RedirectResponse
     {
+        Auth::guard('admin')->logout();
+
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
