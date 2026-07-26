@@ -15,14 +15,20 @@ class Consultation extends Model
         'status',
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'first_admin_reply_at' => 'datetime',
+            'last_message_at' => 'datetime',
+            'closed_at' => 'datetime',
+        ];
+    }
+
     protected static function booted(): void
     {
-        static::creating(
-            function (Consultation $consultation): void {
-                $consultation->public_id ??=
-                    (string) Str::uuid();
-            }
-        );
+        static::creating(function (Consultation $consultation): void {
+            $consultation->public_id ??= (string) Str::uuid();
+        });
     }
 
     public function getRouteKeyName(): string
@@ -32,14 +38,16 @@ class Consultation extends Model
 
     public function guest()
     {
-        return $this->belongsTo(
-            ConsultationGuest::class,
-            'guest_id'
-        );
+        return $this->belongsTo(ConsultationGuest::class, 'guest_id');
     }
 
     public function messages()
     {
         return $this->hasMany(Message::class);
+    }
+
+    public function analyticsEvents()
+    {
+        return $this->hasMany(AnalyticsEvent::class);
     }
 }

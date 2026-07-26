@@ -12,218 +12,354 @@
     >
 
     <title>Live Chat Apotek MD Farma</title>
-
     @vite('resources/js/app.js')
 
     <style>
-        * {
-            box-sizing: border-box;
+        :root {
+            --green-900:#064e3b;
+            --green-800:#065f46;
+            --green-700:#047857;
+            --green-600:#059669;
+            --green-100:#d1fae5;
+            --green-50:#ecfdf5;
+            --slate-950:#0f172a;
+            --slate-700:#334155;
+            --slate-600:#475569;
+            --slate-500:#64748b;
+            --slate-300:#cbd5e1;
+            --slate-200:#e2e8f0;
+            --slate-100:#f1f5f9;
+            --white:#fff;
         }
+
+        * { box-sizing:border-box; }
 
         body {
-            font-family: Arial, sans-serif;
-            background: #f5f7f9;
-            margin: 0;
-            color: #1f2937;
+            margin:0;
+            font-family:Inter,ui-sans-serif,system-ui,-apple-system,
+                BlinkMacSystemFont,"Segoe UI",sans-serif;
+            color:var(--slate-950);
+            background:#f8fafc;
         }
+
+        button,input { font:inherit; }
 
         nav {
-            background: #198754;
-            padding: 14px 6%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
+            position:sticky;
+            top:0;
+            z-index:30;
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:15px;
+            padding:14px clamp(18px,5vw,70px);
+            background:rgba(6,78,59,.96);
+            color:#fff;
+            backdrop-filter:blur(12px);
+            box-shadow:0 8px 24px rgba(6,78,59,.15);
         }
 
-        nav a,
-        nav span {
-            color: white;
-            text-decoration: none;
+        nav a,nav span {
+            color:#fff;
+            text-decoration:none;
         }
 
-        nav form {
-            display: inline;
-        }
+        nav form { display:inline; }
 
-        .nav-links,
-        .admin-menu {
-            display: flex;
-            align-items: center;
-            gap: 14px;
+        .nav-links,.admin-menu {
+            display:flex;
+            align-items:center;
+            gap:14px;
         }
 
         .link-button {
-            background: transparent;
-            padding: 0;
-            border: 0;
-            color: white;
-            text-decoration: underline;
-            cursor: pointer;
+            padding:0;
+            border:0;
+            background:transparent;
+            color:#fff;
+            text-decoration:underline;
+            cursor:pointer;
         }
 
         .container {
-            width: min(760px, 94%);
-            margin: 30px auto;
+            width:min(900px,94%);
+            margin:28px auto 55px;
         }
 
-        .card {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 14px rgba(0, 0, 0, .06);
+        .heading {
+            margin-bottom:19px;
+            text-align:center;
         }
 
-        h1 {
-            text-align: center;
-            color: #198754;
-            margin-bottom: 8px;
+        .heading h1 {
+            margin:0 0 6px;
+            color:var(--green-800);
+            letter-spacing:-.03em;
+        }
+
+        .heading p {
+            margin:0;
+            color:var(--slate-500);
         }
 
         .connection-row {
-            text-align: center;
-            margin-bottom: 20px;
+            display:flex;
+            justify-content:center;
+            margin-top:11px;
         }
 
         .connection-status {
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-            font-size: 14px;
-            color: #4b5563;
+            display:inline-flex;
+            align-items:center;
+            gap:7px;
+            padding:7px 10px;
+            border-radius:999px;
+            background:var(--slate-100);
+            color:var(--slate-600);
+            font-size:11px;
+            font-weight:800;
         }
 
         .connection-dot {
-            width: 9px;
-            height: 9px;
-            border-radius: 50%;
-            background: #d97706;
+            width:8px;
+            height:8px;
+            border-radius:50%;
+            background:#d97706;
         }
 
-        .connection-status.connected
-        .connection-dot {
-            background: #16a34a;
+        .connection-status.connected .connection-dot {
+            background:#16a34a;
         }
 
-        .connection-status.disconnected
-        .connection-dot {
-            background: #dc2626;
+        .connection-status.disconnected .connection-dot {
+            background:#dc2626;
         }
 
-        .patient p {
-            margin: 8px 0;
+        .card {
+            margin-bottom:17px;
+            padding:19px;
+            border:1px solid var(--slate-200);
+            border-radius:17px;
+            background:#fff;
+            box-shadow:0 13px 34px rgba(15,23,42,.07);
+        }
+
+        .consultation-head {
+            display:flex;
+            align-items:flex-start;
+            justify-content:space-between;
+            gap:13px;
+            margin-bottom:13px;
+        }
+
+        .consultation-head h3 { margin:0 0 7px; }
+
+        .status {
+            display:inline-flex;
+            padding:5px 9px;
+            border-radius:999px;
+            background:#fef3c7;
+            color:#92400e;
+            font-size:10px;
+            font-weight:800;
+        }
+
+        .status.finished {
+            background:var(--slate-100);
+            color:var(--slate-700);
+        }
+
+        .status-button {
+            padding:8px 10px;
+            border:1px solid var(--slate-300);
+            border-radius:9px;
+            background:#fff;
+            color:var(--slate-700);
+            font-size:11px;
+            font-weight:800;
+            cursor:pointer;
+        }
+
+        .patient-grid {
+            display:grid;
+            grid-template-columns:repeat(3,minmax(0,1fr));
+            gap:11px;
+        }
+
+        .patient-item {
+            padding:11px;
+            border-radius:11px;
+            background:var(--slate-100);
+        }
+
+        .patient-item span,.patient-item strong {
+            display:block;
+        }
+
+        .patient-item span {
+            margin-bottom:4px;
+            color:var(--slate-500);
+            font-size:10px;
+            font-weight:700;
+            letter-spacing:.05em;
+            text-transform:uppercase;
         }
 
         .chat-box {
-            height: 350px;
-            overflow-y: auto;
-            border: 1px solid #ddd;
-            padding: 15px;
-            background: #fafafa;
-            border-radius: 8px;
+            height:min(520px,63vh);
+            overflow-y:auto;
+            padding:17px;
+            border:1px solid var(--slate-200);
+            border-radius:14px;
+            background:
+                radial-gradient(
+                    circle at top left,
+                    rgba(16,185,129,.08),
+                    transparent 30%
+                ),
+                #f8fafc;
+            scroll-behavior:smooth;
+        }
+
+        .date-divider {
+            display:flex;
+            align-items:center;
+            gap:9px;
+            margin:20px 0 14px;
+            color:var(--slate-500);
+            font-size:10px;
+            font-weight:800;
+            letter-spacing:.04em;
+            text-transform:uppercase;
+        }
+
+        .date-divider::before,.date-divider::after {
+            content:"";
+            flex:1;
+            height:1px;
+            background:var(--slate-200);
         }
 
         .message {
-            background: #198754;
-            color: white;
-            padding: 10px 12px;
-            border-radius: 10px;
-            margin-bottom: 10px;
-            width: fit-content;
-            max-width: 75%;
-            overflow-wrap: anywhere;
+            width:fit-content;
+            max-width:min(78%,620px);
+            margin-bottom:11px;
+            padding:10px 12px 7px;
+            border-radius:14px 14px 14px 4px;
+            background:linear-gradient(
+                145deg,
+                var(--green-700),
+                var(--green-800)
+            );
+            color:#fff;
+            overflow-wrap:anywhere;
+            box-shadow:0 8px 20px rgba(4,120,87,.16);
         }
 
         .message.admin {
-            background: #4b5563;
-            margin-left: auto;
+            margin-left:auto;
+            border-radius:14px 14px 4px 14px;
+            background:linear-gradient(145deg,#334155,#1e293b);
+            box-shadow:0 8px 20px rgba(30,41,59,.17);
+        }
+
+        .message-sender {
+            display:block;
+            margin-bottom:4px;
+            font-size:10px;
+            opacity:.82;
+        }
+
+        .message-text {
+            line-height:1.47;
+            white-space:pre-wrap;
         }
 
         .message img {
-            display: block;
-            margin-top: 10px;
-            border-radius: 6px;
-            max-width: 100%;
+            display:block;
+            max-width:100%;
+            margin-top:8px;
+            border-radius:8px;
         }
 
         .message-time {
-            display: block;
-            margin-top: 7px;
-            font-size: 11px;
-            opacity: .8;
+            display:block;
+            margin-top:6px;
+            font-size:9px;
+            text-align:right;
+            opacity:.77;
         }
 
         .form-row {
-            display: flex;
-            gap: 10px;
+            display:flex;
+            gap:9px;
         }
 
         input[type="text"] {
-            flex: 1;
-            min-width: 0;
-            padding: 12px;
-            border-radius: 6px;
-            border: 1px solid #ccc;
+            flex:1;
+            min-width:0;
+            padding:11px 12px;
+            border:1px solid var(--slate-300);
+            border-radius:9px;
+            outline:none;
         }
 
-        input[type="file"] {
-            margin: 12px 0;
+        input[type="text"]:focus {
+            border-color:var(--green-600);
+            box-shadow:0 0 0 3px rgba(5,150,105,.13);
         }
 
-        .send-button {
-            padding: 12px 20px;
-            background: #198754;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
+        input[type="file"] { margin-top:11px; }
+
+        .send {
+            padding:11px 18px;
+            border:0;
+            border-radius:9px;
+            background:var(--green-700);
+            color:#fff;
+            font-weight:800;
+            cursor:pointer;
         }
 
-        .send-button:disabled {
-            opacity: .55;
-            cursor: wait;
+        .send:disabled {
+            opacity:.55;
+            cursor:wait;
         }
 
         .info {
-            font-size: 14px;
-            color: #666;
+            margin:12px 0 0;
+            color:var(--slate-500);
+            font-size:11px;
         }
 
-        .error-box {
-            background: #fee2e2;
-            color: #991b1b;
-            padding: 12px;
-            border-radius: 6px;
-            margin-bottom: 18px;
+        .error,.success,.form-error {
+            margin-bottom:13px;
+            padding:11px;
+            border-radius:9px;
         }
 
-        .form-error {
-            display: none;
-            background: #fee2e2;
-            color: #991b1b;
-            padding: 10px;
-            border-radius: 6px;
-            margin-bottom: 12px;
+        .error,.form-error {
+            background:#fee2e2;
+            color:#991b1b;
         }
 
-        .form-error.visible {
-            display: block;
+        .success {
+            background:var(--green-50);
+            color:var(--green-900);
         }
 
-        @media (max-width: 600px) {
-            nav {
-                align-items: flex-start;
-                flex-direction: column;
+        .form-error { display:none; }
+        .form-error.visible { display:block; }
+
+        @media (max-width:700px) {
+            nav,.consultation-head {
+                align-items:flex-start;
+                flex-direction:column;
             }
 
-            .form-row {
-                flex-direction: column;
-            }
-
-            .message {
-                max-width: 90%;
-            }
+            .patient-grid { grid-template-columns:1fr; }
+            .form-row { flex-direction:column; }
+            .message { max-width:92%; }
         }
     </style>
 </head>
@@ -235,10 +371,7 @@
                     ← Dashboard
                 </a>
             @else
-                <a href="{{ route('home') }}">
-                    ← Beranda
-                </a>
-
+                <a href="{{ route('home') }}">← Beranda</a>
                 <a href="{{ route('consultation.create') }}">
                     Konsultasi Baru
                 </a>
@@ -247,85 +380,154 @@
 
         @if (auth('admin')->check())
             <div class="admin-menu">
-                <span>
-                    {{ auth('admin')->user()->username }}
-                </span>
-
+                <span>{{ auth('admin')->user()->username }}</span>
                 <form
                     action="{{ route('admin.logout') }}"
                     method="POST"
                 >
                     @csrf
-
-                    <button
-                        class="link-button"
-                        type="submit"
-                    >
+                    <button class="link-button" type="submit">
                         Logout
                     </button>
                 </form>
             </div>
         @else
-            <a href="{{ route('admin.login') }}">
-                Login Admin
-            </a>
+            <a href="{{ route('admin.login') }}">Login Admin</a>
         @endif
     </nav>
 
-    <main class="container">
-        <h1>Live Chat Apotek MD Farma</h1>
+    @php
+        $timezone = config(
+            'analytics.timezone',
+            'Asia/Jakarta'
+        );
+        $started = $consultation->created_at
+            ->copy()
+            ->timezone($timezone);
+        $lastDate = null;
+    @endphp
 
-        <div class="connection-row">
-            <span
-                id="connectionStatus"
-                class="connection-status"
-                aria-live="polite"
-            >
-                <span class="connection-dot"></span>
-                <span data-status-text>
-                    Menghubungkan realtime...
+    <main class="container">
+        <header class="heading">
+            <h1>Konsultasi MD Farma</h1>
+            <p>
+                Dimulai {{ $started
+                    ->locale('id')
+                    ->isoFormat('dddd, D MMMM YYYY') }}
+                pukul {{ $started->format('H.i') }} WIB
+            </p>
+
+            <div class="connection-row">
+                <span
+                    id="connectionStatus"
+                    class="connection-status"
+                    aria-live="polite"
+                >
+                    <span class="connection-dot"></span>
+                    <span data-status-text>
+                        Menghubungkan realtime...
+                    </span>
                 </span>
-            </span>
-        </div>
+            </div>
+        </header>
+
+        @if (session('success'))
+            <div class="success">{{ session('success') }}</div>
+        @endif
 
         @if ($errors->any())
-            <div class="error-box">
+            <div class="error">
                 @foreach ($errors->all() as $error)
                     <div>{{ $error }}</div>
                 @endforeach
             </div>
         @endif
 
-        <section class="card patient">
-            <h3>Data Pasien</h3>
+        <section class="card">
+            <div class="consultation-head">
+                <div>
+                    <h3>Data Konsultasi</h3>
+                    <span class="status {{
+                        $consultation->status === 'selesai'
+                            ? 'finished'
+                            : ''
+                    }}">
+                        {{ ucfirst($consultation->status) }}
+                    </span>
+                </div>
 
-            <p>
-                <strong>Nama:</strong>
-                {{ $consultation->nama }}
-            </p>
+                @if (auth('admin')->check())
+                    <form
+                        action="{{ route(
+                            'admin.chat.status',
+                            $consultation
+                        ) }}"
+                        method="POST"
+                    >
+                        @csrf
+                        <input
+                            type="hidden"
+                            name="status"
+                            value="{{
+                                $consultation->status === 'aktif'
+                                    ? 'selesai'
+                                    : 'aktif'
+                            }}"
+                        >
+                        <button
+                            class="status-button"
+                            type="submit"
+                        >
+                            {{
+                                $consultation->status === 'aktif'
+                                    ? 'Tandai Selesai'
+                                    : 'Aktifkan Kembali'
+                            }}
+                        </button>
+                    </form>
+                @endif
+            </div>
 
-            <p>
-                <strong>Umur:</strong>
-                {{ $consultation->umur }}
-            </p>
-
-            <p>
-                <strong>No HP:</strong>
-                {{ $consultation->no_hp }}
-            </p>
-
-            <p>
-                <strong>Jenis Konsultasi:</strong>
-                {{
-                    $consultation->jenis_konsultasi === 'resep'
-                        ? 'Resep Dokter'
-                        : 'Non Resep'
-                }}
-            </p>
+            <div class="patient-grid">
+                <div class="patient-item">
+                    <span>Nama pasien</span>
+                    <strong>{{ $consultation->nama }}</strong>
+                </div>
+                <div class="patient-item">
+                    <span>Umur</span>
+                    <strong>{{ $consultation->umur }} tahun</strong>
+                </div>
+                <div class="patient-item">
+                    <span>Nomor HP</span>
+                    <strong>{{ $consultation->no_hp }}</strong>
+                </div>
+                <div class="patient-item">
+                    <span>Jenis konsultasi</span>
+                    <strong>
+                        {{
+                            $consultation->jenis_konsultasi === 'resep'
+                                ? 'Resep Dokter'
+                                : 'Non Resep'
+                        }}
+                    </strong>
+                </div>
+                <div class="patient-item">
+                    <span>Tanggal dibuat</span>
+                    <strong>
+                        {{ $started
+                            ->locale('id')
+                            ->isoFormat('D MMMM YYYY') }}
+                    </strong>
+                </div>
+                <div class="patient-item">
+                    <span>Waktu dibuat</span>
+                    <strong>{{ $started->format('H.i') }} WIB</strong>
+                </div>
+            </div>
         </section>
 
         <section class="card">
-            <h3>Riwayat Chat</h3>
+            <h3 style="margin-top:0">Riwayat Chat</h3>
 
             <div
                 class="chat-box"
@@ -333,6 +535,25 @@
                 aria-live="polite"
             >
                 @forelse ($consultation->messages as $chat)
+                    @php
+                        $local = $chat->created_at
+                            ->copy()
+                            ->timezone($timezone);
+                        $dateKey = $local->format('Y-m-d');
+                    @endphp
+
+                    @if ($lastDate !== $dateKey)
+                        <div
+                            class="date-divider"
+                            data-message-date="{{ $dateKey }}"
+                        >
+                            {{ $local
+                                ->locale('id')
+                                ->isoFormat('dddd, D MMMM YYYY') }}
+                        </div>
+                        @php($lastDate = $dateKey)
+                    @endif
+
                     <div
                         class="message {{
                             $chat->sender === 'admin'
@@ -340,8 +561,9 @@
                                 : ''
                         }}"
                         data-message-id="{{ $chat->id }}"
+                        data-message-date="{{ $dateKey }}"
                     >
-                        <strong>
+                        <strong class="message-sender">
                             {{
                                 $chat->sender === 'admin'
                                     ? 'Apoteker'
@@ -350,63 +572,65 @@
                         </strong>
 
                         @if ($chat->message)
-                            <br>
-                            {{ $chat->message }}
+                            <div class="message-text">
+                                {{ $chat->message }}
+                            </div>
                         @endif
 
                         @if ($chat->image)
                             <img
-                                src="{{
-                                    route(
-                                        'chat.attachment',
-                                        [
-                                            'consultation' =>
-                                                $consultation,
-                                            'message' => $chat,
-                                        ]
-                                    )
-                                }}"
+                                src="{{ route(
+                                    'chat.attachment',
+                                    [
+                                        'consultation' => $consultation,
+                                        'message' => $chat,
+                                    ]
+                                ) }}"
                                 alt="Lampiran chat"
-                                width="180"
+                                width="240"
+                                loading="lazy"
                             >
                         @endif
 
-                        <small class="message-time">
-                            {{
-                                $chat->created_at
-                                    ?->format('H:i')
-                            }}
-                        </small>
+                        <time
+                            class="message-time"
+                            datetime="{{ $chat->created_at->toIso8601String() }}"
+                            title="{{ $local
+                                ->locale('id')
+                                ->isoFormat(
+                                    'dddd, D MMMM YYYY [pukul] HH.mm.ss'
+                                ) }} WIB"
+                        >
+                            {{ $local->format('H.i') }} WIB
+                        </time>
                     </div>
                 @empty
-                    <p data-empty-chat>
-                        Belum ada pesan.
-                    </p>
+                    <p data-empty-chat>Belum ada pesan.</p>
                 @endforelse
             </div>
         </section>
 
-        @if (auth('admin')->check())
+        @if ($consultation->status === 'selesai')
             <section class="card">
-                <h3>Balasan Apoteker</h3>
-
-                <div
-                    class="form-error"
-                    data-form-error
-                ></div>
+                <div class="success" style="margin:0">
+                    Konsultasi telah selesai. Admin dapat mengaktifkannya
+                    kembali melalui tombol di bagian Data Konsultasi.
+                </div>
+            </section>
+        @elseif (auth('admin')->check())
+            <section class="card">
+                <h3 style="margin-top:0">Balasan Apoteker</h3>
+                <div class="form-error" data-form-error></div>
 
                 <form
                     class="realtime-form"
-                    action="{{
-                        route(
-                            'admin.chat.reply',
-                            $consultation
-                        )
-                    }}"
+                    action="{{ route(
+                        'admin.chat.reply',
+                        $consultation
+                    ) }}"
                     method="POST"
                 >
                     @csrf
-
                     <div class="form-row">
                         <input
                             type="text"
@@ -417,11 +641,7 @@
                             autocomplete="off"
                             required
                         >
-
-                        <button
-                            class="send-button"
-                            type="submit"
-                        >
+                        <button class="send" type="submit">
                             Kirim Balasan
                         </button>
                     </div>
@@ -429,26 +649,19 @@
             </section>
         @else
             <section class="card">
-                <h3>Kirim Pesan Pasien</h3>
-
-                <div
-                    class="form-error"
-                    data-form-error
-                ></div>
+                <h3 style="margin-top:0">Kirim Pesan Pasien</h3>
+                <div class="form-error" data-form-error></div>
 
                 <form
                     class="realtime-form"
-                    action="{{
-                        route(
-                            'chat.send',
-                            $consultation
-                        )
-                    }}"
+                    action="{{ route(
+                        'chat.send',
+                        $consultation
+                    ) }}"
                     method="POST"
                     enctype="multipart/form-data"
                 >
                     @csrf
-
                     <div class="form-row">
                         <input
                             type="text"
@@ -458,15 +671,10 @@
                             maxlength="2000"
                             autocomplete="off"
                         >
-
-                        <button
-                            class="send-button"
-                            type="submit"
-                        >
+                        <button class="send" type="submit">
                             Kirim Pesan
                         </button>
                     </div>
-
                     <input
                         type="file"
                         name="image"
@@ -476,7 +684,7 @@
 
                 <p class="info">
                     Akses chat terikat pada sesi browser pasien.
-                    Jangan membagikan perangkat saat chat aktif.
+                    Waktu ditampilkan dalam zona WIB.
                 </p>
             </section>
         @endif
@@ -484,402 +692,323 @@
 
     <script>
         (() => {
-            const consultationPublicId = @json(
-                $consultation->public_id
+            const publicId = @json($consultation->public_id);
+            const timezone = @json($timezone);
+            const channelName = `consultation.${publicId}`;
+            const chatBox = document.getElementById('chatBox');
+            const status = document.getElementById(
+                'connectionStatus'
             );
 
-            const channelName =
-                `consultation.${consultationPublicId}`;
-
-            const chatBox =
-                document.getElementById('chatBox');
-
-            const connectionStatus =
-                document.getElementById(
-                    'connectionStatus'
-                );
-
             let initialized = false;
-            let sessionTimeoutId = null;
+            let sessionTimer = null;
 
-            function scrollToBottom() {
-                chatBox.scrollTop =
-                    chatBox.scrollHeight;
+            const dateFormatter = new Intl.DateTimeFormat(
+                'id-ID',
+                {
+                    timeZone: timezone,
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                }
+            );
+
+            const shortTime = new Intl.DateTimeFormat(
+                'id-ID',
+                {
+                    timeZone: timezone,
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false,
+                }
+            );
+
+            const fullTime = new Intl.DateTimeFormat(
+                'id-ID',
+                {
+                    timeZone: timezone,
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false,
+                }
+            );
+
+            function dateKey(value) {
+                const parts = new Intl.DateTimeFormat(
+                    'en-CA',
+                    {
+                        timeZone: timezone,
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                    }
+                ).formatToParts(new Date(value));
+
+                const get = type => parts.find(
+                    item => item.type === type
+                )?.value;
+
+                return `${get('year')}-${get('month')}-${get('day')}`;
             }
 
-            function setConnectionStatus(
-                state,
-                text
-            ) {
-                connectionStatus.classList.remove(
+            function setStatus(state, text) {
+                status.classList.remove(
                     'connected',
                     'disconnected'
                 );
 
-                if (state) {
-                    connectionStatus.classList.add(
-                        state
-                    );
-                }
+                if (state) status.classList.add(state);
 
-                connectionStatus
-                    .querySelector('[data-status-text]')
+                status.querySelector('[data-status-text]')
                     .textContent = text;
             }
 
-            function formatTime(value) {
-                if (!value) {
-                    return '';
-                }
+            function scrollBottom() {
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
 
-                const date = new Date(value);
+            function ensureDateDivider(createdAt) {
+                const key = dateKey(createdAt);
 
-                if (Number.isNaN(date.getTime())) {
-                    return '';
-                }
+                if (
+                    chatBox.querySelector(
+                        `.date-divider[data-message-date="${key}"]`
+                    )
+                ) return;
 
-                return new Intl.DateTimeFormat(
-                    'id-ID',
-                    {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                    }
-                ).format(date);
+                const divider = document.createElement('div');
+                divider.className = 'date-divider';
+                divider.dataset.messageDate = key;
+                divider.textContent = dateFormatter.format(
+                    new Date(createdAt)
+                );
+                chatBox.appendChild(divider);
             }
 
             function appendMessage(data) {
-                if (!data || !data.id) {
-                    return;
-                }
+                if (!data?.id || !data.created_at) return;
 
-                const existing =
+                if (
                     chatBox.querySelector(
                         `[data-message-id="${data.id}"]`
-                    );
+                    )
+                ) return;
 
-                if (existing) {
-                    return;
-                }
+                chatBox.querySelector('[data-empty-chat]')?.remove();
+                ensureDateDivider(data.created_at);
 
-                chatBox
-                    .querySelector('[data-empty-chat]')
-                    ?.remove();
-
-                const bubble =
-                    document.createElement('div');
-
-                bubble.className =
-                    data.sender === 'admin'
-                        ? 'message admin'
-                        : 'message';
-
+                const date = new Date(data.created_at);
+                const bubble = document.createElement('div');
+                bubble.className = data.sender === 'admin'
+                    ? 'message admin'
+                    : 'message';
                 bubble.dataset.messageId = data.id;
+                bubble.dataset.messageDate = dateKey(data.created_at);
 
-                const sender =
-                    document.createElement('strong');
-
-                sender.textContent =
-                    data.sender === 'admin'
-                        ? 'Apoteker'
-                        : 'Pasien';
-
+                const sender = document.createElement('strong');
+                sender.className = 'message-sender';
+                sender.textContent = data.sender === 'admin'
+                    ? 'Apoteker'
+                    : 'Pasien';
                 bubble.appendChild(sender);
 
                 if (data.message) {
-                    bubble.appendChild(
-                        document.createElement('br')
-                    );
-
-                    bubble.appendChild(
-                        document.createTextNode(
-                            data.message
-                        )
-                    );
+                    const text = document.createElement('div');
+                    text.className = 'message-text';
+                    text.textContent = data.message;
+                    bubble.appendChild(text);
                 }
 
                 if (data.attachment_url) {
-                    const image =
-                        document.createElement('img');
-
+                    const image = document.createElement('img');
                     image.src = data.attachment_url;
                     image.alt = 'Lampiran chat';
-                    image.width = 180;
+                    image.width = 240;
                     image.loading = 'lazy';
-
                     bubble.appendChild(image);
                 }
 
-                const time =
-                    document.createElement('small');
-
+                const time = document.createElement('time');
                 time.className = 'message-time';
-                time.textContent = formatTime(
-                    data.created_at
-                );
-
+                time.dateTime = data.created_at;
+                time.textContent = `${shortTime.format(date)} WIB`;
+                time.title = `${fullTime.format(date)} WIB`;
                 bubble.appendChild(time);
+
                 chatBox.appendChild(bubble);
-                scrollToBottom();
+                scrollBottom();
             }
 
-            function showFormError(
-                form,
-                message
-            ) {
-                const section =
-                    form.closest('.card');
-
-                const errorBox =
-                    section?.querySelector(
-                        '[data-form-error]'
-                    );
-
-                if (!errorBox) {
-                    return;
-                }
-
-                errorBox.textContent = message;
-                errorBox.classList.add('visible');
+            function errorBox(form) {
+                return form.closest('.card')
+                    ?.querySelector('[data-form-error]');
             }
 
-            function clearFormError(form) {
-                const section =
-                    form.closest('.card');
-
-                const errorBox =
-                    section?.querySelector(
-                        '[data-form-error]'
-                    );
-
-                if (!errorBox) {
-                    return;
-                }
-
-                errorBox.textContent = '';
-                errorBox.classList.remove(
-                    'visible'
-                );
+            function showError(form, text) {
+                const box = errorBox(form);
+                if (!box) return;
+                box.textContent = text;
+                box.classList.add('visible');
             }
 
-            function scheduleSessionExpiry(
-                expiresAt
-            ) {
-                if (!expiresAt) {
-                    return;
-                }
-
-                window.clearTimeout(
-                    sessionTimeoutId
-                );
-
-                const delay =
-                    new Date(expiresAt).getTime()
-                    - Date.now();
-
-                if (delay <= 0) {
-                    expirePatientSession();
-                    return;
-                }
-
-                sessionTimeoutId =
-                    window.setTimeout(
-                        expirePatientSession,
-                        delay
-                    );
+            function clearError(form) {
+                const box = errorBox(form);
+                if (!box) return;
+                box.textContent = '';
+                box.classList.remove('visible');
             }
 
-            function expirePatientSession() {
+            function expireSession() {
                 window.Echo?.leave(channelName);
-
-                setConnectionStatus(
+                setStatus(
                     'disconnected',
                     'Sesi pasien telah berakhir'
                 );
 
-                document
-                    .querySelectorAll(
-                        '.realtime-form input, ' +
-                        '.realtime-form button'
-                    )
-                    .forEach((element) => {
-                        element.disabled = true;
-                    });
+                document.querySelectorAll(
+                    '.realtime-form input, .realtime-form button'
+                ).forEach(element => {
+                    element.disabled = true;
+                });
             }
 
-            function bindForms() {
-                document
-                    .querySelectorAll(
-                        '.realtime-form'
-                    )
-                    .forEach((form) => {
-                        form.addEventListener(
-                            'submit',
-                            async (event) => {
-                                event.preventDefault();
-                                clearFormError(form);
+            function scheduleExpiry(expiresAt) {
+                if (!expiresAt) return;
 
-                                const button =
-                                    form.querySelector(
-                                        'button[type="submit"]'
-                                    );
+                clearTimeout(sessionTimer);
+                const delay = new Date(expiresAt).getTime()
+                    - Date.now();
 
-                                button.disabled = true;
-
-                                try {
-                                    const response =
-                                        await fetch(
-                                            form.action,
-                                            {
-                                                method:
-                                                    'POST',
-                                                body:
-                                                    new FormData(
-                                                        form
-                                                    ),
-                                                credentials:
-                                                    'same-origin',
-                                                headers: {
-                                                    Accept:
-                                                        'application/json',
-                                                    'X-Requested-With':
-                                                        'XMLHttpRequest',
-                                                },
-                                            }
-                                        );
-
-                                    const result =
-                                        await response
-                                            .json()
-                                            .catch(() => ({}));
-
-                                    if (!response.ok) {
-                                        const errors =
-                                            result.errors
-                                                ? Object
-                                                    .values(
-                                                        result.errors
-                                                    )
-                                                    .flat()
-                                                : [];
-
-                                        throw new Error(
-                                            errors[0]
-                                            ?? result.message
-                                            ?? 'Pesan gagal dikirim.'
-                                        );
-                                    }
-
-                                    /*
-                                     * Event Reverb dapat tiba sebelum
-                                     * response HTTP. appendMessage
-                                     * memiliki deduplikasi berdasarkan ID.
-                                     */
-                                    appendMessage(
-                                        result.message
-                                    );
-
-                                    scheduleSessionExpiry(
-                                        result
-                                            .access_expires_at
-                                    );
-
-                                    form.reset();
-
-                                    if (
-                                        !result
-                                            .realtime_delivered
-                                    ) {
-                                        setConnectionStatus(
-                                            'disconnected',
-                                            'Pesan tersimpan; realtime sedang offline'
-                                        );
-                                    }
-                                } catch (error) {
-                                    showFormError(
-                                        form,
-                                        error.message
-                                    );
-                                } finally {
-                                    button.disabled =
-                                        false;
-                                }
-                            }
-                        );
-                    });
-            }
-
-            function initializeRealtime() {
-                if (
-                    initialized
-                    || !window.Echo
-                ) {
+                if (delay <= 0) {
+                    expireSession();
                     return;
                 }
 
-                initialized = true;
-
-                const channel =
-                    window.Echo.private(
-                        channelName
-                    );
-
-                channel.listen(
-                    '.message.sent',
-                    appendMessage
-                );
-
-                const connection =
-                    window.Echo
-                        .connector
-                        ?.pusher
-                        ?.connection;
-
-                connection?.bind(
-                    'connected',
-                    () => {
-                        setConnectionStatus(
-                            'connected',
-                            'Realtime terhubung'
-                        );
-                    }
-                );
-
-                connection?.bind(
-                    'disconnected',
-                    () => {
-                        setConnectionStatus(
-                            'disconnected',
-                            'Realtime terputus'
-                        );
-                    }
-                );
-
-                connection?.bind(
-                    'unavailable',
-                    () => {
-                        setConnectionStatus(
-                            'disconnected',
-                            'Server realtime tidak tersedia'
-                        );
-                    }
-                );
-
-                connection?.bind(
-                    'error',
-                    () => {
-                        setConnectionStatus(
-                            'disconnected',
-                            'Koneksi realtime bermasalah'
-                        );
-                    }
+                sessionTimer = setTimeout(
+                    expireSession,
+                    delay
                 );
             }
 
-            bindForms();
-            scrollToBottom();
+            document.querySelectorAll('.realtime-form')
+                .forEach(form => {
+                    form.addEventListener(
+                        'submit',
+                        async event => {
+                            event.preventDefault();
+                            clearError(form);
+
+                            const button = form.querySelector(
+                                'button[type="submit"]'
+                            );
+                            button.disabled = true;
+
+                            try {
+                                const response = await fetch(
+                                    form.action,
+                                    {
+                                        method: 'POST',
+                                        body: new FormData(form),
+                                        credentials: 'same-origin',
+                                        headers: {
+                                            Accept: 'application/json',
+                                            'X-Requested-With':
+                                                'XMLHttpRequest',
+                                        },
+                                    }
+                                );
+
+                                const result = await response
+                                    .json()
+                                    .catch(() => ({}));
+
+                                if (!response.ok) {
+                                    const errors = result.errors
+                                        ? Object.values(
+                                            result.errors
+                                        ).flat()
+                                        : [];
+
+                                    throw new Error(
+                                        errors[0]
+                                        ?? result.message
+                                        ?? 'Pesan gagal dikirim.'
+                                    );
+                                }
+
+                                appendMessage(result.message);
+                                scheduleExpiry(
+                                    result.access_expires_at
+                                );
+                                form.reset();
+
+                                if (!result.realtime_delivered) {
+                                    setStatus(
+                                        'disconnected',
+                                        'Pesan tersimpan; realtime offline'
+                                    );
+                                }
+                            } catch (error) {
+                                showError(form, error.message);
+                            } finally {
+                                button.disabled = false;
+                            }
+                        }
+                    );
+                });
+
+            function initializeRealtime() {
+                if (initialized || !window.Echo) return;
+                initialized = true;
+
+                window.Echo
+                    .private(channelName)
+                    .listen('.message.sent', appendMessage);
+
+                const connection = window.Echo
+                    .connector
+                    ?.pusher
+                    ?.connection;
+
+                connection?.bind('connected', () => {
+                    setStatus(
+                        'connected',
+                        'Realtime terhubung'
+                    );
+                });
+
+                connection?.bind('disconnected', () => {
+                    setStatus(
+                        'disconnected',
+                        'Realtime terputus'
+                    );
+                });
+
+                connection?.bind('unavailable', () => {
+                    setStatus(
+                        'disconnected',
+                        'Server realtime tidak tersedia'
+                    );
+                });
+
+                connection?.bind('error', () => {
+                    setStatus(
+                        'disconnected',
+                        'Koneksi realtime bermasalah'
+                    );
+                });
+            }
+
+            scrollBottom();
 
             @if (! auth('admin')->check())
-                scheduleSessionExpiry(
+                scheduleExpiry(
                     @json(
                         auth('patient')
                             ->user()
@@ -895,20 +1024,13 @@
                 window.addEventListener(
                     'md-farma:echo-ready',
                     initializeRealtime,
-                    {
-                        once: true,
-                    }
+                    { once:true }
                 );
             }
 
-            window.addEventListener(
-                'beforeunload',
-                () => {
-                    window.Echo?.leave(
-                        channelName
-                    );
-                }
-            );
+            window.addEventListener('beforeunload', () => {
+                window.Echo?.leave(channelName);
+            });
         })();
     </script>
 </body>

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AnalyticsEvent;
 use App\Models\Consultation;
 use App\Models\ConsultationGuest;
 use Illuminate\Contracts\View\View;
@@ -13,84 +14,82 @@ use Illuminate\Support\Str;
 
 class ConsultationController extends Controller
 {
-    public function create(): View
+    public function create(Request $request): View
     {
+        AnalyticsEvent::recordOnce(
+            $request,
+            'consultation_form_viewed',
+            metadata: ['source' => 'consultation_form']
+        );
+
         return view('consultation.form');
     }
 
-    public function store(
-        Request $request
-    ): RedirectResponse {
+    public function store(Request $request): RedirectResponse
+    {
         $validated = $request->validate([
-            'nama' => [
-                'required',
-                'string',
-                'max:100',
-            ],
-            'umur' => [
-                'required',
-                'integer',
-                'min:1',
-                'max:120',
-            ],
+            'nama' => ['required', 'string', 'max:100'],
+            'umur' => ['required', 'integer', 'min:1', 'max:120'],
             'no_hp' => [
                 'required',
                 'string',
                 'max:25',
                 'regex:/^[0-9+\-\s()]+$/',
             ],
-            'jenis_konsultasi' => [
-                'required',
-                'in:resep,non_resep',
-            ],
+            'jenis_konsultasi' => ['required', 'in:resep,non_resep'],
         ]);
 
-        $consultation = DB::transaction(
-            function () use ($validated): Consultation {
-                $guest = Auth::guard('patient')->user();
+        $consultation = DB::transaction(function () use (
+            $request,
+            $validated
+        ): Consultation {
+            $guest = Auth::guard('patient')->user();
 
-                if (
-                    ! $guest
-                    || ! $guest->expires_at
-                    || $guest->expires_at->isPast()
-                ) {
-                    if ($guest) {
-                        Auth::guard('patient')->logout();
-                    }
-
-                    $guest = ConsultationGuest::create([
-                        'public_id' => (string) Str::uuid(),
-                        'expires_at' => now()->addHours(2),
-                    ]);
-
-                    Auth::guard('patient')->login($guest);
-                } else {
-                    $guest->forceFill([
-                        'expires_at' => now()->addHours(2),
-                    ])->save();
+            if (
+                ! $guest
+                || ! $guest->expires_at
+                || $guest->expires_at->isPast()
+            ) {
+                if ($guest) {
+                    Auth::guard('patient')->logout();
                 }
 
-                $consultation = new Consultation([
-                    'nama' => $validated['nama'],
-                    'umur' => $validated['umur'],
-                    'no_hp' => $validated['no_hp'],
-                    'jenis_konsultasi' =>
-                        $validated['jenis_konsultasi'],
-                    'status' => 'aktif',
+                $guest = ConsultationGuest::create([
+                    'public_id' => (string) Str::uuid(),
+                    'expires_at' => now()->addHours(2),
                 ]);
 
-                $consultation->guest()->associate($guest);
-                $consultation->save();
-
-                return $consultation;
+                Auth::guard('patient')->login($guest);
+            } else {
+                $guest->forceFill([
+                    'expires_at' => now()->addHours(2),
+                ])->save();
             }
-        );
+
+            $consultation = new Consultation([
+                'nama' => $validated['nama'],
+                'umur' => $validated['umur'],
+                'no_hp' => $validated['no_hp'],
+                'jenis_konsultasi' => $validated['jenis_konsultasi'],
+                'status' => 'aktif',
+            ]);
+
+            $consultation->guest()->associate($guest);
+            $consultation->save();
+
+            AnalyticsEvent::recordOnce(
+                $request,
+                'consultation_created',
+                $consultation,
+                ['type' => $consultation->jenis_konsultasi],
+                'consultation:'.$consultation->id
+            );
+
+            return $consultation;
+        });
 
         $request->session()->regenerate();
 
-        return redirect()->route(
-            'chat.show',
-            $consultation
-        );
+        return redirect()->route('chat.show', $consultation);
     }
 }

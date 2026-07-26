@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Events\MessageSent;
+use App\Models\AnalyticsEvent;
 use App\Models\Consultation;
 use App\Models\Message;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -20,6 +22,12 @@ class MessageController extends Controller
         Request $request,
         Consultation $consultation
     ): JsonResponse|RedirectResponse {
+        abort_if(
+            $consultation->status !== 'aktif',
+            409,
+            'Konsultasi sudah selesai.'
+        );
+
         $guest = Auth::guard('patient')->user();
 
         abort_unless(
@@ -44,18 +52,40 @@ class MessageController extends Controller
             ],
         ]);
 
-        $imagePath = $request
-            ->file('image')
-            ?->store(
-                'consultations/'.$consultation->public_id,
-                'local'
+        $imagePath = $request->file('image')?->store(
+            'consultations/'.$consultation->public_id,
+            'local'
+        );
+
+        $message = DB::transaction(function () use (
+            $request,
+            $consultation,
+            $validated,
+            $imagePath
+        ): Message {
+            $message = $consultation->messages()->create([
+                'sender' => 'user',
+                'message' => $validated['message'] ?? null,
+                'image' => $imagePath,
+            ]);
+
+            $consultation->forceFill([
+                'last_message_at' => $message->created_at,
+            ])->save();
+
+            AnalyticsEvent::recordOnce(
+                $request,
+                'patient_message_sent',
+                $consultation,
+                [
+                    'message_id' => $message->id,
+                    'has_attachment' => $imagePath !== null,
+                ],
+                'message:'.$message->id
             );
 
-        $message = $consultation->messages()->create([
-            'sender' => 'user',
-            'message' => $validated['message'] ?? null,
-            'image' => $imagePath,
-        ]);
+            return $message;
+        });
 
         return $this->broadcastAndRespond(
             $request,
@@ -68,19 +98,47 @@ class MessageController extends Controller
         Request $request,
         Consultation $consultation
     ): JsonResponse|RedirectResponse {
+        abort_if(
+            $consultation->status !== 'aktif',
+            409,
+            'Aktifkan kembali konsultasi sebelum membalas.'
+        );
+
         $validated = $request->validate([
-            'message' => [
-                'required',
-                'string',
-                'max:2000',
-            ],
+            'message' => ['required', 'string', 'max:2000'],
         ]);
 
-        $message = $consultation->messages()->create([
-            'sender' => 'admin',
-            'message' => $validated['message'],
-            'image' => null,
-        ]);
+        $message = DB::transaction(function () use (
+            $request,
+            $consultation,
+            $validated
+        ): Message {
+            $message = $consultation->messages()->create([
+                'sender' => 'admin',
+                'message' => $validated['message'],
+                'image' => null,
+            ]);
+
+            $changes = [
+                'last_message_at' => $message->created_at,
+            ];
+
+            if (! $consultation->first_admin_reply_at) {
+                $changes['first_admin_reply_at'] = $message->created_at;
+            }
+
+            $consultation->forceFill($changes)->save();
+
+            AnalyticsEvent::recordOnce(
+                $request,
+                'admin_replied',
+                $consultation,
+                ['message_id' => $message->id],
+                'message:'.$message->id
+            );
+
+            return $message;
+        });
 
         return $this->broadcastAndRespond(
             $request,
@@ -94,21 +152,17 @@ class MessageController extends Controller
         Message $message
     ): StreamedResponse {
         abort_unless(
-            (int) $message->consultation_id
-                === (int) $consultation->id,
+            (int) $message->consultation_id === (int) $consultation->id,
             404
         );
 
         abort_unless(
             $message->image
-            && Storage::disk('local')
-                ->exists($message->image),
+            && Storage::disk('local')->exists($message->image),
             404
         );
 
-        return Storage::disk('local')->response(
-            $message->image
-        );
+        return Storage::disk('local')->response($message->image);
     }
 
     private function broadcastAndRespond(
@@ -141,16 +195,13 @@ class MessageController extends Controller
                 'success' => true,
                 'realtime_delivered' => $broadcasted,
                 'message' => $payload,
-                'access_expires_at' =>
-                    Auth::guard('patient')->user()
-                        ?->expires_at
-                        ?->toIso8601String(),
+                'access_expires_at' => Auth::guard('patient')
+                    ->user()
+                    ?->expires_at
+                    ?->toIso8601String(),
             ], 201);
         }
 
-        return redirect()->route(
-            'chat.show',
-            $consultation
-        );
+        return redirect()->route('chat.show', $consultation);
     }
 }

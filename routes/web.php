@@ -7,16 +7,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MessageController;
 use Illuminate\Support\Facades\Route;
 
-/*
-|--------------------------------------------------------------------------
-| Halaman publik
-|--------------------------------------------------------------------------
-*/
-
-Route::get(
-    '/',
-    [HomeController::class, 'index']
-)->name('home');
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
 Route::get(
     '/konsultasi',
@@ -30,16 +21,6 @@ Route::post(
     ->middleware('throttle:10,1')
     ->name('consultation.store');
 
-/*
-|--------------------------------------------------------------------------
-| Chat konsultasi
-|--------------------------------------------------------------------------
-|
-| URL memakai UUID. Middleware tetap memeriksa kepemilikan session pasien,
-| jadi UUID bukan satu-satunya lapisan keamanan.
-|
-*/
-
 Route::get(
     '/chat/{consultation:public_id}',
     [ChatController::class, 'index']
@@ -51,10 +32,7 @@ Route::post(
     '/chat/{consultation:public_id}/send',
     [MessageController::class, 'store']
 )
-    ->middleware([
-        'consultation.patient',
-        'throttle:30,1',
-    ])
+    ->middleware(['consultation.patient', 'throttle:30,1'])
     ->name('chat.send');
 
 Route::get(
@@ -64,12 +42,6 @@ Route::get(
     ->whereNumber('message')
     ->middleware('consultation.access')
     ->name('chat.attachment');
-
-/*
-|--------------------------------------------------------------------------
-| Admin
-|--------------------------------------------------------------------------
-*/
 
 Route::prefix('admin')
     ->name('admin.')
@@ -104,5 +76,12 @@ Route::prefix('admin')
                 )
                     ->middleware('throttle:30,1')
                     ->name('chat.reply');
+
+                Route::post(
+                    '/chat/{consultation:public_id}/status',
+                    [AdminController::class, 'updateStatus']
+                )
+                    ->middleware('throttle:20,1')
+                    ->name('chat.status');
             });
     });
