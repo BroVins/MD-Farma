@@ -7,9 +7,9 @@ use App\Models\Consultation;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -228,16 +228,37 @@ class AdminInboxController extends Controller
         }
 
         $adminId = (int) Auth::guard('admin')->id();
-        $unreadSql = $this->unreadCountSql();
+
+        /*
+         * Hitung pesan belum dibaca sekali per konsultasi.
+         * Hasilnya di-join ke daftar konsultasi, sehingga tidak lagi
+         * menjalankan correlated subquery untuk setiap baris.
+         */
+        $unreadCounts = $this->unreadCountsQuery(
+            $adminId
+        );
 
         $query = Consultation::query()
             ->select('consultations.*')
+            ->leftJoinSub(
+                $unreadCounts,
+                'inbox_unread',
+                function ($join): void {
+                    $join->on(
+                        'inbox_unread.consultation_id',
+                        '=',
+                        'consultations.id'
+                    );
+                }
+            )
             ->selectRaw(
-                $unreadSql.' AS unread_count',
-                [$adminId]
+                'COALESCE(inbox_unread.unread_count, 0) '
+                .'AS unread_count'
             )
             ->with([
-                'lastMessage' => function ($messageRelation): void {
+                'lastMessage' => function (
+                    $messageRelation
+                ): void {
                     $messageRelation->select([
                         'messages.id',
                         'messages.consultation_id',
@@ -247,22 +268,23 @@ class AdminInboxController extends Controller
                         'messages.created_at',
                     ]);
                 },
-            ])
-            ->withCount('messages');
+            ]);
 
         $this->applyFilters(
             $query,
             $search,
             $state,
-            $type,
-            $unreadSql,
-            $adminId
+            $type
         );
 
         $this->applySort($query, $sort);
 
+        /*
+         * Dua puluh item sudah cukup untuk layar inbox dan mengurangi
+         * beban render serta transfer HTML pada pemuatan pertama.
+         */
         $consultations = $query->paginate(
-            30,
+            20,
             ['*'],
             'inbox_page'
         );
@@ -296,9 +318,7 @@ class AdminInboxController extends Controller
         Builder $query,
         string $search,
         string $state,
-        string $type,
-        string $unreadSql,
-        int $adminId
+        string $type
     ): void {
         if ($search !== '') {
             $query->where(
@@ -307,12 +327,12 @@ class AdminInboxController extends Controller
                 ): void {
                     $builder
                         ->where(
-                            'nama',
+                            'consultations.nama',
                             'like',
                             '%'.$search.'%'
                         )
                         ->orWhere(
-                            'no_hp',
+                            'consultations.no_hp',
                             'like',
                             '%'.$search.'%'
                         )
@@ -331,37 +351,49 @@ class AdminInboxController extends Controller
 
         if ($type !== '') {
             $query->where(
-                'jenis_konsultasi',
+                'consultations.jenis_konsultasi',
                 $type
             );
         }
 
         match ($state) {
-            'unread' => $query->whereRaw(
-                $unreadSql.' > 0',
-                [$adminId]
+            'unread' => $query->where(
+                'inbox_unread.unread_count',
+                '>',
+                0
             ),
             'new' => $query
-                ->where('status', 'aktif')
-                ->whereNull('last_message_at'),
-            'waiting_admin' => $query
-                ->where('status', 'aktif')
                 ->where(
-                    'last_message_sender',
+                    'consultations.status',
+                    'aktif'
+                )
+                ->whereNull(
+                    'consultations.last_message_at'
+                ),
+            'waiting_admin' => $query
+                ->where(
+                    'consultations.status',
+                    'aktif'
+                )
+                ->where(
+                    'consultations.last_message_sender',
                     'user'
                 ),
             'waiting_patient' => $query
-                ->where('status', 'aktif')
                 ->where(
-                    'last_message_sender',
+                    'consultations.status',
+                    'aktif'
+                )
+                ->where(
+                    'consultations.last_message_sender',
                     'admin'
                 ),
             'active' => $query->where(
-                'status',
+                'consultations.status',
                 'aktif'
             ),
             'completed' => $query->where(
-                'status',
+                'consultations.status',
                 'selesai'
             ),
             default => null,
@@ -374,19 +406,28 @@ class AdminInboxController extends Controller
     ): void {
         match ($sort) {
             'oldest' => $query->orderByRaw(
-                'COALESCE(last_message_at, created_at) ASC'
+                'COALESCE('
+                .'consultations.last_message_at, '
+                .'consultations.created_at'
+                .') ASC'
             ),
             'waiting_oldest' => $query
                 ->orderByRaw(
-                    "CASE WHEN status = 'aktif' "
-                    ."AND last_message_sender = 'user' "
+                    "CASE WHEN consultations.status = 'aktif' "
+                    ."AND consultations.last_message_sender = 'user' "
                     .'THEN 0 ELSE 1 END ASC'
                 )
                 ->orderByRaw(
-                    'COALESCE(last_message_at, created_at) ASC'
+                    'COALESCE('
+                    .'consultations.last_message_at, '
+                    .'consultations.created_at'
+                    .') ASC'
                 ),
             default => $query->orderByRaw(
-                'COALESCE(last_message_at, created_at) DESC'
+                'COALESCE('
+                .'consultations.last_message_at, '
+                .'consultations.created_at'
+                .') DESC'
             ),
         };
     }
@@ -400,6 +441,7 @@ class AdminInboxController extends Controller
         );
 
         $lastMessage = $consultation->lastMessage;
+
         $activityTime = $consultation->last_message_at
             ?? $consultation->created_at;
 
@@ -413,13 +455,17 @@ class AdminInboxController extends Controller
 
         $label = $localTime->isToday()
             ? $localTime->format('H.i')
-            : ($localTime->isYesterday()
-                ? 'Kemarin'
-                : ($localTime->year === $today->year
-                    ? $localTime
-                        ->locale('id')
-                        ->isoFormat('D MMM')
-                    : $localTime->format('d/m/Y')));
+            : (
+                $localTime->isYesterday()
+                    ? 'Kemarin'
+                    : (
+                        $localTime->year === $today->year
+                            ? $localTime
+                                ->locale('id')
+                                ->isoFormat('D MMM')
+                            : $localTime->format('d/m/Y')
+                    )
+            );
 
         $preview = $lastMessage?->message
             ? Str::limit(
@@ -430,9 +476,11 @@ class AdminInboxController extends Controller
                 ),
                 72
             )
-            : ($lastMessage?->image
-                ? '📎 Lampiran gambar'
-                : 'Konsultasi baru — belum ada pesan');
+            : (
+                $lastMessage?->image
+                    ? '📎 Lampiran'
+                    : 'Konsultasi baru — belum ada pesan'
+            );
 
         $consultation->setAttribute(
             'inbox_state',
@@ -530,89 +578,121 @@ class AdminInboxController extends Controller
     {
         $adminId = (int) Auth::guard('admin')->id();
 
-        $unreadQuery = DB::table('messages as m')
-            ->join(
-                'consultations as c',
-                'c.id',
-                '=',
-                'm.consultation_id'
+        /*
+         * Sebelumnya enam status konsultasi dihitung melalui enam query.
+         * Sekarang seluruh status dihitung melalui satu aggregate query.
+         */
+        $consultationCounts = Consultation::query()
+            ->selectRaw(
+                'COUNT(*) AS total'
             )
+            ->selectRaw(
+                "SUM(CASE WHEN status = 'aktif' "
+                .'THEN 1 ELSE 0 END) AS active'
+            )
+            ->selectRaw(
+                "SUM(CASE WHEN status = 'selesai' "
+                .'THEN 1 ELSE 0 END) AS completed'
+            )
+            ->selectRaw(
+                "SUM(CASE WHEN status = 'aktif' "
+                .'AND last_message_at IS NULL '
+                .'THEN 1 ELSE 0 END) AS new_count'
+            )
+            ->selectRaw(
+                "SUM(CASE WHEN status = 'aktif' "
+                ."AND last_message_sender = 'user' "
+                .'THEN 1 ELSE 0 END) AS waiting_admin'
+            )
+            ->selectRaw(
+                "SUM(CASE WHEN status = 'aktif' "
+                ."AND last_message_sender = 'admin' "
+                .'THEN 1 ELSE 0 END) AS waiting_patient'
+            )
+            ->first();
+
+        /*
+         * Total pesan dan total percakapan belum dibaca juga dihitung
+         * melalui satu query dari hasil agregasi per konsultasi.
+         */
+        $unreadCounts = DB::query()
+            ->fromSub(
+                $this->unreadCountsQuery($adminId),
+                'unread_by_consultation'
+            )
+            ->selectRaw(
+                'COALESCE(SUM(unread_count), 0) '
+                .'AS unread_messages'
+            )
+            ->selectRaw(
+                'COUNT(*) AS unread_conversations'
+            )
+            ->first();
+
+        return [
+            'total' => (int) (
+                $consultationCounts?->total ?? 0
+            ),
+            'active' => (int) (
+                $consultationCounts?->active ?? 0
+            ),
+            'completed' => (int) (
+                $consultationCounts?->completed ?? 0
+            ),
+            'new' => (int) (
+                $consultationCounts?->new_count ?? 0
+            ),
+            'waitingAdmin' => (int) (
+                $consultationCounts?->waiting_admin ?? 0
+            ),
+            'waitingPatient' => (int) (
+                $consultationCounts?->waiting_patient ?? 0
+            ),
+            'unreadMessages' => (int) (
+                $unreadCounts?->unread_messages ?? 0
+            ),
+            'unreadConversations' => (int) (
+                $unreadCounts?->unread_conversations ?? 0
+            ),
+        ];
+    }
+
+    private function unreadCountsQuery(
+        int $adminId
+    ): QueryBuilder {
+        return DB::table('messages as unread_messages')
             ->leftJoin(
-                'admin_consultation_reads as r',
+                'admin_consultation_reads as unread_reads',
                 function ($join) use ($adminId): void {
                     $join
                         ->on(
-                            'r.consultation_id',
+                            'unread_reads.consultation_id',
                             '=',
-                            'm.consultation_id'
+                            'unread_messages.consultation_id'
                         )
                         ->where(
-                            'r.admin_id',
+                            'unread_reads.admin_id',
                             '=',
                             $adminId
                         );
                 }
             )
-            ->where('m.sender', 'user')
-            ->whereRaw(
-                'm.id > COALESCE('
-                .'r.last_read_message_id, 0)'
-            );
-
-        return [
-            'total' => Consultation::count(),
-            'active' => Consultation::where(
-                'status',
-                'aktif'
-            )->count(),
-            'completed' => Consultation::where(
-                'status',
-                'selesai'
-            )->count(),
-            'new' => Consultation::where(
-                'status',
-                'aktif'
-            )->whereNull('last_message_at')->count(),
-            'waitingAdmin' => Consultation::where(
-                'status',
-                'aktif'
-            )->where(
-                'last_message_sender',
+            ->select(
+                'unread_messages.consultation_id'
+            )
+            ->selectRaw(
+                'COUNT(*) AS unread_count'
+            )
+            ->where(
+                'unread_messages.sender',
                 'user'
-            )->count(),
-            'waitingPatient' => Consultation::where(
-                'status',
-                'aktif'
-            )->where(
-                'last_message_sender',
-                'admin'
-            )->count(),
-            'unreadMessages' =>
-                (clone $unreadQuery)->count(),
-            'unreadConversations' =>
-                (clone $unreadQuery)
-                    ->distinct()
-                    ->count('m.consultation_id'),
-        ];
-    }
-
-    private function unreadCountSql(): string
-    {
-        return '('
-            .'SELECT COUNT(*) '
-            .'FROM messages AS inbox_messages '
-            .'WHERE inbox_messages.consultation_id '
-            .'= consultations.id '
-            ."AND inbox_messages.sender = 'user' "
-            .'AND inbox_messages.id > COALESCE(('
-            .'SELECT inbox_reads.last_read_message_id '
-            .'FROM admin_consultation_reads '
-            .'AS inbox_reads '
-            .'WHERE inbox_reads.admin_id = ? '
-            .'AND inbox_reads.consultation_id '
-            .'= consultations.id '
-            .'LIMIT 1'
-            .'), 0)'
-            .')';
+            )
+            ->whereRaw(
+                'unread_messages.id > COALESCE('
+                .'unread_reads.last_read_message_id, 0)'
+            )
+            ->groupBy(
+                'unread_messages.consultation_id'
+            );
     }
 }
