@@ -1,5 +1,8 @@
 @php
     $lastDateKey = null;
+    $startedLocal = $consultation->created_at
+        ->copy()
+        ->timezone($timezone);
 @endphp
 
 <section
@@ -16,27 +19,93 @@
         >
             ←
         </button>
+
         <span class="conversation-avatar large" aria-hidden="true">
             {{ mb_strtoupper(mb_substr($consultation->nama, 0, 1)) }}
         </span>
+
         <div class="conversation-heading">
             <strong>{{ $consultation->nama }}</strong>
-            <span>
-                {{
-                    $consultation->jenis_konsultasi === 'resep'
-                        ? 'Resep dokter'
-                        : 'Non resep'
-                }}
-                · {{ $consultation->inbox_state_label }}
-            </span>
+
+            <div class="conversation-heading-meta">
+                <span class="type-chip">
+                    {{
+                        $consultation->jenis_konsultasi === 'resep'
+                            ? 'Resep dokter'
+                            : 'Non resep'
+                    }}
+                </span>
+
+                <span
+                    class="state-chip state-{{
+                        $consultation->inbox_state
+                    }}"
+                >
+                    {{ $consultation->inbox_state_label }}
+                </span>
+
+                <span class="conversation-started">
+                    Dimulai
+                    {{
+                        $startedLocal
+                            ->locale('id')
+                            ->isoFormat('D MMM YYYY, HH.mm')
+                    }}
+                    WIB
+                </span>
+            </div>
         </div>
+
         <div class="conversation-header-actions">
+            @if ($consultation->status === 'aktif')
+                <form
+                    class="header-status-form"
+                    action="{{ route('admin.chat.status', $consultation) }}"
+                    method="POST"
+                    data-status-form
+                >
+                    @csrf
+                    <input type="hidden" name="status" value="selesai">
+
+                    <button
+                        type="submit"
+                        class="header-action finish-action"
+                        title="Tandai konsultasi sebagai selesai"
+                    >
+                        <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            aria-hidden="true"
+                        >
+                            <path d="M20 6 9 17l-5-5"/>
+                        </svg>
+                        <span>Tandai selesai</span>
+                    </button>
+                </form>
+            @endif
+
             <button
                 class="header-action secondary"
                 type="button"
                 data-toggle-patient
             >
-                Detail
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                >
+                    <circle cx="12" cy="7" r="4"/>
+                    <path d="M5.5 21a6.5 6.5 0 0 1 13 0"/>
+                </svg>
+                <span>Detail</span>
             </button>
         </div>
     </header>
@@ -83,6 +152,7 @@
                         : 'patient'
                 }}"
                 data-message-id="{{ $message->id }}"
+                data-message-sender="{{ $message->sender }}"
             >
                 <span class="message-sender">
                     {{
@@ -97,54 +167,61 @@
                 @endif
 
                 @if ($message->image)
-                    @php
-                        $attachmentUrl = route(
-                            'chat.attachment',
-                            [
-                                'consultation' => $consultation,
-                                'message' => $message,
-                            ]
-                        );
-                    @endphp
-
                     @if ($message->isImageAttachment())
                         <a
                             class="message-attachment"
-                            href="{{ $attachmentUrl }}"
+                            href="{{ route('chat.attachment', [
+                                'consultation' => $consultation,
+                                'message' => $message,
+                            ]) }}"
                             target="_blank"
                             rel="noopener"
                         >
                             <img
-                                src="{{ $attachmentUrl }}"
+                                src="{{ route('chat.attachment', [
+                                    'consultation' => $consultation,
+                                    'message' => $message,
+                                ]) }}"
                                 alt="{{ $message->attachmentName() }}"
                                 loading="lazy"
                             >
                         </a>
                     @else
                         <a
-                            class="message-attachment"
-                            href="{{ $attachmentUrl }}"
+                            class="message-attachment document-attachment"
+                            href="{{ route('chat.attachment', [
+                                'consultation' => $consultation,
+                                'message' => $message,
+                            ]) }}"
                             target="_blank"
                             rel="noopener"
                             download
-                            style="display:flex;align-items:center;gap:10px;min-width:230px;padding:10px 11px;border:1px solid rgba(5,150,105,.18);border-radius:10px;color:inherit;background:rgba(255,255,255,.76);text-decoration:none;"
                         >
-                            <span
-                                aria-hidden="true"
-                                style="display:grid;width:38px;height:38px;place-items:center;flex:0 0 auto;border-radius:10px;color:#047857;background:#d1fae5;font-size:19px;font-weight:900;"
-                            >
-                                ↓
-                            </span>
-                            <span style="min-width:0;flex:1;">
-                                <strong
-                                    style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;"
+                            <span class="document-icon" aria-hidden="true">
+                                <svg
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
                                 >
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                    <path d="M14 2v6h6"/>
+                                    <path d="M12 18v-6"/>
+                                    <path d="m9 15 3 3 3-3"/>
+                                </svg>
+                            </span>
+
+                            <span class="document-copy">
+                                <strong>
                                     {{ $message->attachmentName() }}
                                 </strong>
-                                <small
-                                    style="display:block;margin-top:3px;color:#64748b;font-size:9px;text-transform:uppercase;"
-                                >
-                                    {{ $message->attachmentExtension() ?: 'dokumen' }}
+                                <small>
+                                    {{
+                                        $message->attachmentExtension()
+                                            ?: 'dokumen'
+                                    }}
                                 </small>
                             </span>
                         </a>
@@ -193,12 +270,24 @@
                 data-reply-form
             >
                 @csrf
+
                 <label
                     class="image-picker"
                     title="Kirim gambar"
                     aria-label="Pilih gambar"
                 >
-                    <span aria-hidden="true">📎</span>
+                    <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                    >
+                        <path d="M21.44 11.05 12.25 20.24a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                    </svg>
+
                     <input
                         type="file"
                         name="image"
@@ -216,6 +305,7 @@
                         autocomplete="off"
                         data-reply-input
                     ></textarea>
+
                     <div
                         class="selected-image"
                         data-image-preview
@@ -228,7 +318,9 @@
                         >
                         <div>
                             <strong data-image-name></strong>
-                            <small>Maksimum 2 MB · JPG, PNG, atau WebP</small>
+                            <small>
+                                Maksimum 2 MB · JPG, PNG, atau WebP
+                            </small>
                         </div>
                         <button
                             type="button"
@@ -245,20 +337,19 @@
                     type="submit"
                     data-send-button
                 >
-                    Kirim
-                </button>
-            </form>
-
-            <form
-                class="status-inline-form"
-                action="{{ route('admin.chat.status', $consultation) }}"
-                method="POST"
-                data-status-form
-            >
-                @csrf
-                <input type="hidden" name="status" value="selesai">
-                <button type="submit" class="finish-button">
-                    ✓ Tandai selesai
+                    <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                    >
+                        <path d="m22 2-7 20-4-9-9-4Z"/>
+                        <path d="M22 2 11 13"/>
+                    </svg>
+                    <span>Kirim</span>
                 </button>
             </form>
         @else
