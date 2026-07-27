@@ -16,11 +16,9 @@
         >
             ←
         </button>
-
         <span class="conversation-avatar large" aria-hidden="true">
             {{ mb_strtoupper(mb_substr($consultation->nama, 0, 1)) }}
         </span>
-
         <div class="conversation-heading">
             <strong>{{ $consultation->nama }}</strong>
             <span>
@@ -32,7 +30,6 @@
                 · {{ $consultation->inbox_state_label }}
             </span>
         </div>
-
         <div class="conversation-header-actions">
             <button
                 class="header-action secondary"
@@ -41,7 +38,7 @@
             >
                 Detail
             </button>
-</div>
+        </div>
     </header>
 
     <div
@@ -76,10 +73,7 @@
                         }}
                     </span>
                 </div>
-
-                @php
-                    $lastDateKey = $dateKey;
-                @endphp
+                @php($lastDateKey = $dateKey)
             @endif
 
             <article
@@ -103,34 +97,58 @@
                 @endif
 
                 @if ($message->image)
-                    <a
-                        class="message-attachment"
-                        href="{{
-                            route(
-                                'chat.attachment',
-                                [
-                                    'consultation' => $consultation,
-                                    'message' => $message,
-                                ]
-                            )
-                        }}"
-                        target="_blank"
-                        rel="noopener"
-                    >
-                        <img
-                            src="{{
-                                route(
-                                    'chat.attachment',
-                                    [
-                                        'consultation' => $consultation,
-                                        'message' => $message,
-                                    ]
-                                )
-                            }}"
-                            alt="Lampiran konsultasi"
-                            loading="lazy"
+                    @php
+                        $attachmentUrl = route(
+                            'chat.attachment',
+                            [
+                                'consultation' => $consultation,
+                                'message' => $message,
+                            ]
+                        );
+                    @endphp
+
+                    @if ($message->isImageAttachment())
+                        <a
+                            class="message-attachment"
+                            href="{{ $attachmentUrl }}"
+                            target="_blank"
+                            rel="noopener"
                         >
-                    </a>
+                            <img
+                                src="{{ $attachmentUrl }}"
+                                alt="{{ $message->attachmentName() }}"
+                                loading="lazy"
+                            >
+                        </a>
+                    @else
+                        <a
+                            class="message-attachment"
+                            href="{{ $attachmentUrl }}"
+                            target="_blank"
+                            rel="noopener"
+                            download
+                            style="display:flex;align-items:center;gap:10px;min-width:230px;padding:10px 11px;border:1px solid rgba(5,150,105,.18);border-radius:10px;color:inherit;background:rgba(255,255,255,.76);text-decoration:none;"
+                        >
+                            <span
+                                aria-hidden="true"
+                                style="display:grid;width:38px;height:38px;place-items:center;flex:0 0 auto;border-radius:10px;color:#047857;background:#d1fae5;font-size:19px;font-weight:900;"
+                            >
+                                ↓
+                            </span>
+                            <span style="min-width:0;flex:1;">
+                                <strong
+                                    style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;"
+                                >
+                                    {{ $message->attachmentName() }}
+                                </strong>
+                                <small
+                                    style="display:block;margin-top:3px;color:#64748b;font-size:9px;text-transform:uppercase;"
+                                >
+                                    {{ $message->attachmentExtension() ?: 'dokumen' }}
+                                </small>
+                            </span>
+                        </a>
+                    @endif
                 @endif
 
                 <time
@@ -175,14 +193,12 @@
                 data-reply-form
             >
                 @csrf
-
                 <label
                     class="image-picker"
                     title="Kirim gambar"
                     aria-label="Pilih gambar"
                 >
                     <span aria-hidden="true">📎</span>
-
                     <input
                         type="file"
                         name="image"
@@ -200,7 +216,6 @@
                         autocomplete="off"
                         data-reply-input
                     ></textarea>
-
                     <div
                         class="selected-image"
                         data-image-preview
@@ -211,12 +226,10 @@
                             alt="Pratinjau gambar"
                             data-image-preview-src
                         >
-
                         <div>
                             <strong data-image-name></strong>
                             <small>Maksimum 2 MB · JPG, PNG, atau WebP</small>
                         </div>
-
                         <button
                             type="button"
                             data-remove-image
@@ -244,7 +257,6 @@
             >
                 @csrf
                 <input type="hidden" name="status" value="selesai">
-
                 <button type="submit" class="finish-button">
                     ✓ Tandai selesai
                 </button>
@@ -255,7 +267,6 @@
                     Konsultasi ini sudah selesai. Aktifkan kembali
                     jika admin perlu mengirim balasan tambahan.
                 </span>
-
                 <form
                     action="{{ route('admin.chat.status', $consultation) }}"
                     method="POST"
@@ -263,7 +274,6 @@
                 >
                     @csrf
                     <input type="hidden" name="status" value="aktif">
-
                     <button type="submit" class="reopen-button">
                         Aktifkan kembali
                     </button>

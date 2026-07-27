@@ -15,11 +15,26 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
 
 class MessageController extends Controller
 {
+    private const ATTACHMENT_MAX_KB = 10240;
+
+    private const ATTACHMENT_EXTENSIONS = [
+        'jpg',
+        'jpeg',
+        'png',
+        'webp',
+        'pdf',
+        'doc',
+        'docx',
+        'xls',
+        'xlsx',
+    ];
+
     public function store(
         Request $request,
         Consultation $consultation
@@ -39,35 +54,18 @@ class MessageController extends Controller
             404
         );
 
-        $validated = $request->validate([
-            'message' => [
-                'nullable',
-                'string',
-                'max:2000',
-                'required_without:image',
-            ],
-            'image' => [
-                'nullable',
-                'image',
-                'mimes:jpg,jpeg,png,webp',
-                'max:2048',
-            ],
-        ]);
-
-        $imagePath = $request
-            ->file('image')
-            ?->store(
-                'consultations/'
-                    .$consultation->public_id,
-                'local'
-            );
+        $validated = $this->validateMessage($request);
+        $attachmentPath = $this->storeAttachment(
+            $request,
+            $consultation
+        );
 
         $message = DB::transaction(
             function () use (
                 $request,
                 $consultation,
                 $validated,
-                $imagePath
+                $attachmentPath
             ): Message {
                 $message = $consultation
                     ->messages()
@@ -76,14 +74,15 @@ class MessageController extends Controller
                         'message' =>
                             $validated['message']
                             ?? null,
-                        'image' => $imagePath,
+                        // Kolom lama bernama image, tetapi sekarang
+                        // menyimpan gambar maupun dokumen.
+                        'image' => $attachmentPath,
                     ]);
 
                 $consultation->forceFill([
                     'last_message_at' =>
                         $message->created_at,
-                    'last_message_sender' =>
-                        'user',
+                    'last_message_sender' => 'user',
                 ])->save();
 
                 AnalyticsEvent::recordOnce(
@@ -91,10 +90,11 @@ class MessageController extends Controller
                     'patient_message_sent',
                     $consultation,
                     [
-                        'message_id' =>
-                            $message->id,
+                        'message_id' => $message->id,
                         'has_attachment' =>
-                            $imagePath !== null,
+                            $attachmentPath !== null,
+                        'attachment_type' =>
+                            $message->attachmentType(),
                     ],
                     'message:'.$message->id
                 );
@@ -117,39 +117,21 @@ class MessageController extends Controller
         abort_if(
             $consultation->status !== 'aktif',
             409,
-            'Aktifkan kembali konsultasi '
-                .'sebelum membalas.'
+            'Aktifkan kembali konsultasi sebelum membalas.'
         );
 
-        $validated = $request->validate([
-            'message' => [
-                'nullable',
-                'string',
-                'max:2000',
-                'required_without:image',
-            ],
-            'image' => [
-                'nullable',
-                'image',
-                'mimes:jpg,jpeg,png,webp',
-                'max:2048',
-            ],
-        ]);
-
-        $imagePath = $request
-            ->file('image')
-            ?->store(
-                'consultations/'
-                    .$consultation->public_id,
-                'local'
-            );
+        $validated = $this->validateMessage($request);
+        $attachmentPath = $this->storeAttachment(
+            $request,
+            $consultation
+        );
 
         $message = DB::transaction(
             function () use (
                 $request,
                 $consultation,
                 $validated,
-                $imagePath
+                $attachmentPath
             ): Message {
                 $message = $consultation
                     ->messages()
@@ -158,23 +140,18 @@ class MessageController extends Controller
                         'message' =>
                             $validated['message']
                             ?? null,
-                        'image' => $imagePath,
+                        'image' => $attachmentPath,
                     ]);
 
                 $changes = [
                     'last_message_at' =>
                         $message->created_at,
-                    'last_message_sender' =>
-                        'admin',
+                    'last_message_sender' => 'admin',
                 ];
 
-                if (
-                    ! $consultation
-                        ->first_admin_reply_at
-                ) {
-                    $changes[
-                        'first_admin_reply_at'
-                    ] = $message->created_at;
+                if (! $consultation->first_admin_reply_at) {
+                    $changes['first_admin_reply_at'] =
+                        $message->created_at;
                 }
 
                 $consultation
@@ -186,10 +163,11 @@ class MessageController extends Controller
                     'admin_replied',
                     $consultation,
                     [
-                        'message_id' =>
-                            $message->id,
+                        'message_id' => $message->id,
                         'has_attachment' =>
-                            $imagePath !== null,
+                            $attachmentPath !== null,
+                        'attachment_type' =>
+                            $message->attachmentType(),
                     ],
                     'message:'.$message->id
                 );
@@ -223,7 +201,77 @@ class MessageController extends Controller
         );
 
         return Storage::disk('local')->response(
-            $message->image
+            $message->image,
+            $message->attachmentName()
+        );
+    }
+
+    private function validateMessage(Request $request): array
+    {
+        return $request->validate([
+            'message' => [
+                'nullable',
+                'string',
+                'max:2000',
+                'required_without:image',
+            ],
+            'image' => [
+                'nullable',
+                'file',
+                'mimes:'.implode(
+                    ',',
+                    self::ATTACHMENT_EXTENSIONS
+                ),
+                'max:'.self::ATTACHMENT_MAX_KB,
+            ],
+        ], [
+            'message.required_without' =>
+                'Tulis pesan atau pilih lampiran terlebih dahulu.',
+            'image.file' =>
+                'Lampiran yang dipilih tidak valid.',
+            'image.mimes' =>
+                'Lampiran harus berupa JPG, PNG, WebP, PDF, Word, atau Excel.',
+            'image.max' =>
+                'Ukuran lampiran maksimal 10 MB.',
+        ]);
+    }
+
+    private function storeAttachment(
+        Request $request,
+        Consultation $consultation
+    ): ?string {
+        $file = $request->file('image');
+
+        if (! $file) {
+            return null;
+        }
+
+        $originalName = pathinfo(
+            $file->getClientOriginalName(),
+            PATHINFO_FILENAME
+        );
+        $extension = strtolower(
+            $file->getClientOriginalExtension()
+        );
+
+        $safeBaseName = Str::slug(
+            Str::ascii($originalName)
+        );
+
+        if ($safeBaseName === '') {
+            $safeBaseName = 'lampiran';
+        }
+
+        $fileName = Str::uuid()
+            .'_'
+            .$safeBaseName
+            .'.'
+            .$extension;
+
+        return $file->storeAs(
+            'consultations/'.$consultation->public_id,
+            $fileName,
+            'local'
         );
     }
 
@@ -233,7 +281,6 @@ class MessageController extends Controller
         Message $message
     ): JsonResponse|RedirectResponse {
         $message->loadMissing('consultation');
-
         $event = new MessageSent($message);
         $payload = $event->broadcastWith();
         $broadcasted = true;
@@ -244,12 +291,10 @@ class MessageController extends Controller
             $broadcasted = false;
 
             Log::warning(
-                'Pesan tersimpan, tetapi '
-                    .'broadcast realtime gagal.',
+                'Pesan tersimpan, tetapi broadcast realtime gagal.',
                 [
                     'message_id' => $message->id,
-                    'exception' =>
-                        $exception::class,
+                    'exception' => $exception::class,
                 ]
             );
         }
@@ -267,8 +312,7 @@ class MessageController extends Controller
         if ($request->expectsJson()) {
             return response()->json([
                 'success' => true,
-                'realtime_delivered' =>
-                    $broadcasted,
+                'realtime_delivered' => $broadcasted,
                 'message' => $payload,
                 'access_expires_at' =>
                     Auth::guard('patient')
@@ -306,10 +350,8 @@ class MessageController extends Controller
                 [
                     'consultation_id' =>
                         $consultation->id,
-                    'message_id' =>
-                        $message->id,
-                    'exception' =>
-                        $exception::class,
+                    'message_id' => $message->id,
+                    'exception' => $exception::class,
                 ]
             );
         }
@@ -335,10 +377,8 @@ class MessageController extends Controller
                 [
                     'consultation_id' =>
                         $consultation->id,
-                    'message_id' =>
-                        $message->id,
-                    'exception' =>
-                        $exception::class,
+                    'message_id' => $message->id,
+                    'exception' => $exception::class,
                 ]
             );
         }

@@ -38,21 +38,34 @@ class MessageSent implements ShouldBroadcastNow
 
     public function broadcastWith(): array
     {
+        $attachmentRoute = $this->message->image
+            ? route(
+                'chat.attachment',
+                [
+                    'consultation' =>
+                        $this->message->consultation,
+                    'message' => $this->message,
+                ],
+                false
+            )
+            : null;
+
         return [
             'id' => $this->message->id,
             'sender' => $this->message->sender,
             'message' => $this->message->message,
-            'attachment_url' => $this->message->image
-                ? route(
-                    'chat.attachment',
-                    [
-                        'consultation' =>
-                            $this->message->consultation,
-                        'message' => $this->message,
-                    ],
-                    false
-                )
-                : null,
+            // Dipertahankan untuk kompatibilitas UI lama.
+            'attachment_url' =>
+                $this->message->isImageAttachment()
+                    ? $attachmentRoute
+                    : null,
+            'attachment_download_url' => $attachmentRoute,
+            'attachment_name' =>
+                $this->message->attachmentName(),
+            'attachment_type' =>
+                $this->message->attachmentType(),
+            'attachment_extension' =>
+                $this->message->attachmentExtension(),
             'created_at' => $this->message
                 ->created_at
                 ?->toIso8601String(),
