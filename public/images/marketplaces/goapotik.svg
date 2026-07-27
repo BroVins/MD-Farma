@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 100" role="img" aria-labelledby="title">
+<title id="title">GoApotik</title>
+<rect width="360" height="100" rx="18" fill="#fff"/>
+<g transform="translate(12 13)">
+  <rect width="74" height="74" rx="22" fill="#E8F8F1"/>
+  <path d="M31 14h12v17h17v12H43v17H31V43H14V31h17z" fill="#18A66D"/>
+  <circle cx="59" cy="17" r="8" fill="#2D6CDF"/>
+</g>
+<text x="103" y="62" fill="#2F4054" font-family="Arial, Helvetica, sans-serif" font-size="38" font-weight="700">Go</text>
+<text x="151" y="62" fill="#18A66D" font-family="Arial, Helvetica, sans-serif" font-size="38" font-weight="700">Apotik</text>
+</svg>
