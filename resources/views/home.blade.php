@@ -1189,6 +1189,7 @@
                 <a href="#layanan">Layanan</a>
                 <a href="#operasional">Jam dan Lokasi</a>
                 <a href="#marketplace">Marketplace</a>
+                <a data-partnership-nav href="{{ route('partnership') }}">Kerja Sama</a>
                 <a class="nav-cta" href="{{ route('consultation.create') }}">
                     Mulai Konsultasi
                 </a>
@@ -1240,6 +1241,14 @@
                         >
                             Belanja Obat
                         </a>
+                        <a
+                            class="button button-secondary"
+                            data-partnership-hero
+                            href="{{ route('partnership') }}"
+                        >
+                            Kerja Sama
+                        </a>
+
                     </div>
 
                     <div class="trust-row">

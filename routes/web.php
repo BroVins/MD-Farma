@@ -12,6 +12,10 @@ Route::get(
     '/',
     [HomeController::class, 'index']
 )->name('home');
+Route::get(
+    '/kerja-sama',
+    [HomeController::class, 'partnership']
+)->name('partnership');
 
 Route::get(
     '/konsultasi',
