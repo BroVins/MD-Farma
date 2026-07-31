@@ -7,6 +7,7 @@ use App\Events\AdminInboxActivity;
 use App\Models\AnalyticsEvent;
 use App\Models\Consultation;
 use App\Models\ConsultationGuest;
+use App\Support\PatientAccessCookie;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,6 +19,29 @@ use Throwable;
 
 class ConsultationController extends Controller
 {
+    public function entry(
+        Request $request,
+        PatientAccessCookie $accessCookie
+    ): View|RedirectResponse {
+        $latestConsultation = $accessCookie
+            ->restore($request)
+            ?->consultations()
+            ->with('lastMessage')
+            ->latest('id')
+            ->first();
+
+        if (! $latestConsultation) {
+            return redirect()->route(
+                'consultation.create'
+            );
+        }
+
+        return view('consultation.entry', [
+            'latestConsultation' =>
+                $latestConsultation,
+        ]);
+    }
+
     public function create(Request $request): View
     {
         AnalyticsEvent::recordOnce(
@@ -31,8 +55,10 @@ class ConsultationController extends Controller
         return view('consultation.form');
     }
 
-    public function store(Request $request): RedirectResponse
-    {
+    public function store(
+        Request $request,
+        PatientAccessCookie $accessCookie
+    ): RedirectResponse {
         $validated = $request->validate([
             'nama' => [
                 'required',
@@ -77,7 +103,15 @@ class ConsultationController extends Controller
                         'public_id' =>
                             (string) Str::uuid(),
                         'expires_at' =>
-                            now()->addHours(2),
+                            now()->addHours(
+                                max(
+                                    1,
+                                    (int) config(
+                                        'consultation.patient_access_hours',
+                                        24
+                                    )
+                                )
+                            ),
                     ]);
 
                     Auth::guard('patient')->login(
@@ -86,7 +120,15 @@ class ConsultationController extends Controller
                 } else {
                     $guest->forceFill([
                         'expires_at' =>
-                            now()->addHours(2),
+                            now()->addHours(
+                                max(
+                                    1,
+                                    (int) config(
+                                        'consultation.patient_access_hours',
+                                        24
+                                    )
+                                )
+                            ),
                     ])->save();
                 }
 
@@ -154,9 +196,16 @@ class ConsultationController extends Controller
             );
         }
 
-        return redirect()->route(
-            'chat.show',
-            $consultation
-        );
+        return redirect()
+            ->route(
+                'chat.show',
+                $consultation
+            )
+            ->withCookie(
+                $accessCookie->make(
+                    $request,
+                    $consultation->guest
+                )
+            );
     }
 }

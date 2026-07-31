@@ -12,13 +12,19 @@ Route::get(
     '/',
     [HomeController::class, 'index']
 )->name('home');
+
 Route::get(
-    '/kerja-sama',
-    [HomeController::class, 'partnership']
-)->name('partnership');
+    '/profil',
+    [HomeController::class, 'profile']
+)->name('profile');
 
 Route::get(
     '/konsultasi',
+    [ConsultationController::class, 'entry']
+)->name('consultation.entry');
+
+Route::get(
+    '/konsultasi/baru',
     [ConsultationController::class, 'create']
 )->name('consultation.create');
 
@@ -33,8 +39,18 @@ Route::get(
     '/chat/{consultation:public_id}',
     [ChatController::class, 'index']
 )
-    ->middleware('consultation.access')
+    ->middleware('consultation.patient')
     ->name('chat.show');
+
+Route::get(
+    '/chat/{consultation:public_id}/messages',
+    [MessageController::class, 'index']
+)
+    ->middleware([
+        'consultation.patient',
+        'throttle:120,1',
+    ])
+    ->name('chat.messages');
 
 Route::post(
     '/chat/{consultation:public_id}/send',
@@ -100,6 +116,13 @@ Route::prefix('admin')
                 )
                     ->middleware('throttle:180,1')
                     ->name('inbox.conversation');
+
+                Route::get(
+                    '/inbox/{consultation:public_id}/messages',
+                    [MessageController::class, 'index']
+                )
+                    ->middleware('throttle:120,1')
+                    ->name('inbox.messages');
 
                 Route::post(
                     '/inbox/{consultation:public_id}/read',

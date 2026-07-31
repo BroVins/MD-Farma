@@ -9,6 +9,7 @@
     class="conversation-shell"
     data-active-conversation="{{ $consultation->public_id }}"
     data-read-url="{{ route('admin.inbox.read', $consultation) }}"
+    data-messages-url="{{ route('admin.inbox.messages', $consultation) }}"
 >
     <header class="conversation-header">
         <button
@@ -142,7 +143,9 @@
                         }}
                     </span>
                 </div>
-                @php($lastDateKey = $dateKey)
+                @php
+                    $lastDateKey = $dateKey;
+                @endphp
             @endif
 
             <article

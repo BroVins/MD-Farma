@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\PatientAccessCookie;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -9,6 +10,11 @@ use Symfony\Component\HttpFoundation\Response;
 
 class EnsureConsultationAccess
 {
+    public function __construct(
+        private readonly PatientAccessCookie $accessCookie
+    ) {
+    }
+
     public function handle(
         Request $request,
         Closure $next
@@ -19,7 +25,7 @@ class EnsureConsultationAccess
             return $next($request);
         }
 
-        $guest = Auth::guard('patient')->user();
+        $guest = $this->accessCookie->restore($request);
 
         $allowed = $guest
             && $guest->expires_at
@@ -29,12 +35,10 @@ class EnsureConsultationAccess
 
         abort_unless($allowed, 404);
 
-        /*
-         * Masa akses bergerak selama pasien masih aktif.
-         */
-        $guest->forceFill([
-            'expires_at' => now()->addHours(2),
-        ])->save();
+        $this->accessCookie->refresh(
+            $request,
+            $guest
+        );
 
         return $next($request);
     }

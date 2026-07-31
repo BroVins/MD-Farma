@@ -52,6 +52,10 @@ class MessageSent implements ShouldBroadcastNow
 
         return [
             'id' => $this->message->id,
+            'consultation_public_id' =>
+                $this->message
+                    ->consultation
+                    ->public_id,
             'sender' => $this->message->sender,
             'message' => $this->message->message,
             // Dipertahankan untuk kompatibilitas UI lama.

@@ -1006,7 +1006,7 @@
                 min-height: 66px;
             }
 
-            .nav-links > a:not(.nav-cta) {
+            .nav-links > a:not(.nav-cta):not(.nav-profile) {
                 display: none;
             }
 
@@ -1186,11 +1186,13 @@
             </a>
 
             <div class="nav-links">
+                <a class="nav-profile" href="{{ route('profile') }}">
+                    Profil
+                </a>
                 <a href="#layanan">Layanan</a>
                 <a href="#operasional">Jam dan Lokasi</a>
                 <a href="#marketplace">Marketplace</a>
-                <a data-partnership-nav href="{{ route('partnership') }}">Kerja Sama</a>
-                <a class="nav-cta" href="{{ route('consultation.create') }}">
+                <a class="nav-cta" href="{{ route('consultation.entry') }}">
                     Mulai Konsultasi
                 </a>
             </div>
@@ -1220,7 +1222,7 @@
                     <div class="hero-actions">
                         <a
                             class="button button-primary"
-                            href="{{ route('consultation.create') }}"
+                            href="{{ route('consultation.entry') }}"
                         >
                             Mulai Konsultasi
                             <svg
@@ -1241,20 +1243,13 @@
                         >
                             Belanja Obat
                         </a>
-                        <a
-                            class="button button-secondary"
-                            data-partnership-hero
-                            href="{{ route('partnership') }}"
-                        >
-                            Kerja Sama
-                        </a>
-
                     </div>
 
                     <div class="trust-row">
                         <span><i>✓</i>Chat privat</span>
                         <span><i>✓</i>Apoteker MD Farma</span>
                         <span><i>✓</i>Lampiran aman</span>
+                        <span><i>✓</i>Riwayat tersimpan otomatis</span>
                     </div>
                 </div>
 
@@ -1686,7 +1681,7 @@
 
                     <a
                         class="button"
-                        href="{{ route('consultation.create') }}"
+                        href="{{ route('consultation.entry') }}"
                     >
                         Mulai Konsultasi
                         <svg
@@ -1750,6 +1745,9 @@
                     Jakarta Utara 14370.
                 </p>
                 <div class="footer-links" style="margin-top: 12px;">
+                    <a href="{{ route('profile') }}">
+                        Profil MD Farma
+                    </a>
                     <a
                         href="https://maps.app.goo.gl/82xaeQfUQYvyrork8"
                         target="_blank"
@@ -1776,7 +1774,7 @@
 
     <a
         class="mobile-cta"
-        href="{{ route('consultation.create') }}"
+        href="{{ route('consultation.entry') }}"
     >
         <svg
             viewBox="0 0 24 24"

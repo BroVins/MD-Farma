@@ -35,6 +35,64 @@ class MessageController extends Controller
         'xlsx',
     ];
 
+    public function index(
+        Request $request,
+        Consultation $consultation
+    ): JsonResponse {
+        $validated = $request->validate([
+            'after_id' => [
+                'nullable',
+                'integer',
+                'min:0',
+            ],
+        ]);
+
+        $afterId = (int) (
+            $validated['after_id']
+            ?? 0
+        );
+
+        $messages = $consultation
+            ->messages()
+            ->where('id', '>', $afterId)
+            ->oldest('id')
+            ->limit(200)
+            ->get();
+
+        $payloads = $messages
+            ->map(function (Message $message) use (
+                $consultation
+            ): array {
+                $message->setRelation(
+                    'consultation',
+                    $consultation
+                );
+
+                return (new MessageSent($message))
+                    ->broadcastWith();
+            })
+            ->values();
+
+        $lastMessageId = $messages
+            ->last()
+            ?->id
+            ?? $afterId;
+
+        return response()->json([
+            'messages' => $payloads,
+            'last_message_id' => $lastMessageId,
+            'consultation_status' =>
+                $consultation->status,
+            'access_expires_at' =>
+                $request->routeIs('chat.messages')
+                    ? Auth::guard('patient')
+                        ->user()
+                        ?->expires_at
+                        ?->toIso8601String()
+                    : null,
+        ]);
+    }
+
     public function store(
         Request $request,
         Consultation $consultation
@@ -320,6 +378,13 @@ class MessageController extends Controller
                         ?->expires_at
                         ?->toIso8601String(),
             ], 201);
+        }
+
+        if ($request->routeIs('admin.chat.reply')) {
+            return redirect()->route(
+                'admin.inbox.show',
+                $consultation
+            );
         }
 
         return redirect()->route(

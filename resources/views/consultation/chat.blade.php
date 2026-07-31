@@ -1351,6 +1351,10 @@
     </style>
 </head>
 <body>
+    @php
+        $isAdminView = false;
+    @endphp
+
     <header class="site-bar">
         <a class="brand" href="{{ route('home') }}">
             <span class="brand-mark" aria-hidden="true">
@@ -1362,7 +1366,7 @@
         </a>
 
         <div class="site-actions">
-            @if (auth('admin')->check())
+            @if ($isAdminView)
                 <a class="top-link" href="{{ route('admin.inbox') }}">
                     Inbox Admin
                 </a>
@@ -1386,7 +1390,12 @@
             ->timezone($timezone);
         $startedDateKey = $started->format('Y-m-d');
         $lastDate = $startedDateKey;
-        $isAdminView = auth('admin')->check();
+        /*
+         * Route ini khusus pasien. Panel admin memakai route inbox sendiri,
+         * sehingga sesi admin pada browser yang sama tidak boleh mengubah
+         * identitas pengirim di halaman pasien.
+         */
+        $isAdminView = false;
         $patientName = trim((string) ($consultation->nama ?? '')) ?: 'Pasien';
         $consultationLabel = $consultation->jenis_konsultasi === 'resep'
             ? 'Resep Dokter'
@@ -1638,7 +1647,9 @@
                                         ->isoFormat('D MMMM YYYY') }}
                             </span>
                         </div>
-                        @php($lastDate = $dateKey)
+                        @php
+                            $lastDate = $dateKey;
+                        @endphp
                     @endif
 
                     <div
@@ -1962,7 +1973,7 @@
                                     <rect x="5" y="10" width="14" height="11" rx="2"/>
                                     <path d="M8 10V7a4 4 0 0 1 8 0v3"/>
                                 </svg>
-                                Akses chat terikat pada sesi browser
+                                Riwayat tersimpan otomatis di browser ini
                             </span>
                             <span><b data-character-count>0</b>/2000</span>
                         </div>
@@ -1978,6 +1989,18 @@
             const timezone = @json($timezone);
             const isAdminView = @json($isAdminView);
             const channelName = `consultation.${publicId}`;
+            const syncUrl = @json(
+                route('chat.messages', $consultation)
+            );
+            const syncIntervalMs = @json(
+                max(
+                    2000,
+                    (int) config(
+                        'consultation.sync_interval_ms',
+                        4000
+                    )
+                )
+            );
             const chatBox = document.getElementById('chatBox');
             const status = document.getElementById('connectionStatus');
             const form = document.querySelector('.realtime-form');
@@ -1995,6 +2018,10 @@
 
             let initialized = false;
             let sessionTimer = null;
+            let syncTimer = null;
+            let syncInFlight = false;
+            let realtimeConnected = false;
+            let consultationStatus = @json($consultation->status);
             let previewUrl = null;
             let selectedAttachmentInput = null;
 
@@ -2093,6 +2120,11 @@
 
             function appendMessage(data) {
                 if (!chatBox || !data?.id || !data.created_at) return;
+
+                if (
+                    data.consultation_public_id
+                    && data.consultation_public_id !== publicId
+                ) return;
 
                 if (
                     chatBox.querySelector(
@@ -2205,6 +2237,91 @@
                 row.appendChild(bubble);
                 chatBox.appendChild(row);
                 scrollBottom('smooth');
+            }
+
+            function latestMessageId() {
+                if (!chatBox) return 0;
+
+                return Array.from(
+                    chatBox.querySelectorAll('[data-message-id]')
+                ).reduce(
+                    (latest, element) => Math.max(
+                        latest,
+                        Number(element.dataset.messageId) || 0
+                    ),
+                    0
+                );
+            }
+
+            async function syncMessages() {
+                if (syncInFlight) return;
+                syncInFlight = true;
+
+                const url = new URL(
+                    syncUrl,
+                    window.location.origin
+                );
+                url.searchParams.set(
+                    'after_id',
+                    String(latestMessageId())
+                );
+
+                try {
+                    const response = await fetch(url, {
+                        credentials: 'same-origin',
+                        headers: {
+                            Accept: 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(
+                            'Riwayat chat belum dapat disinkronkan.'
+                        );
+                    }
+
+                    const result = await response.json();
+
+                    if (
+                        result.consultation_status
+                        && consultationStatus !== result.consultation_status
+                    ) {
+                        consultationStatus = result.consultation_status;
+                        window.location.reload();
+                        return;
+                    }
+
+                    (result.messages ?? []).forEach(appendMessage);
+                    scheduleExpiry(result.access_expires_at);
+
+                    if (!realtimeConnected) {
+                        setStatus(
+                            'connected',
+                            'Sinkronisasi cadangan aktif'
+                        );
+                    }
+                } catch (error) {
+                    if (!realtimeConnected) {
+                        setStatus(
+                            'disconnected',
+                            navigator.onLine
+                                ? 'Sinkronisasi tertunda'
+                                : 'Perangkat sedang offline'
+                        );
+                    }
+                } finally {
+                    syncInFlight = false;
+                }
+            }
+
+            function startMessageSync() {
+                window.clearInterval(syncTimer);
+                syncMessages();
+                syncTimer = window.setInterval(
+                    syncMessages,
+                    syncIntervalMs
+                );
             }
 
             function showError(text) {
@@ -2536,21 +2653,28 @@
                     ?.connection;
 
                 connection?.bind('connected', () => {
+                    realtimeConnected = true;
                     setStatus('connected', 'Realtime terhubung');
+                    syncMessages();
                 });
 
                 connection?.bind('disconnected', () => {
+                    realtimeConnected = false;
                     setStatus('disconnected', 'Realtime terputus');
+                    syncMessages();
                 });
 
                 connection?.bind('unavailable', () => {
+                    realtimeConnected = false;
                     setStatus(
                         'disconnected',
                         'Server realtime tidak tersedia'
                     );
+                    syncMessages();
                 });
 
                 connection?.bind('error', () => {
+                    realtimeConnected = false;
                     setStatus(
                         'disconnected',
                         'Koneksi realtime bermasalah'
@@ -2560,8 +2684,9 @@
 
             updateTextarea();
             scrollBottom();
+            startMessageSync();
 
-            @if (! auth('admin')->check())
+            @if (! $isAdminView)
                 scheduleExpiry(
                     @json(
                         auth('patient')
@@ -2582,8 +2707,25 @@
                 );
             }
 
+            window.addEventListener('online', syncMessages);
+
+            window.addEventListener('offline', () => {
+                realtimeConnected = false;
+                setStatus(
+                    'disconnected',
+                    'Perangkat sedang offline'
+                );
+            });
+
+            window.addEventListener('focus', syncMessages);
+
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden) syncMessages();
+            });
+
             window.addEventListener('beforeunload', () => {
                 if (previewUrl) URL.revokeObjectURL(previewUrl);
+                window.clearInterval(syncTimer);
                 window.Echo?.leave(channelName);
             });
         })();

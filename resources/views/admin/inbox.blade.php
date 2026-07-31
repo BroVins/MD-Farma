@@ -766,6 +766,57 @@
             border-radius:9px;
         }
 
+        .document-attachment {
+            width:min(270px,100%);
+            display:flex;
+            align-items:center;
+            gap:9px;
+            padding:9px 10px;
+            border:1px solid rgba(15,104,64,.16);
+            border-radius:9px;
+            color:inherit;
+            background:rgba(255,255,255,.72);
+            text-decoration:none;
+        }
+
+        .document-icon {
+            width:31px;
+            height:31px;
+            display:grid;
+            flex:0 0 auto;
+            place-items:center;
+            border-radius:8px;
+            color:var(--green-700);
+            background:var(--green-100);
+            font-size:16px;
+            font-weight:900;
+        }
+
+        .document-icon svg {
+            width:17px;
+            height:17px;
+        }
+
+        .document-copy {
+            min-width:0;
+            display:grid;
+            gap:2px;
+        }
+
+        .document-copy strong,
+        .document-copy small {
+            overflow:hidden;
+            text-overflow:ellipsis;
+            white-space:nowrap;
+        }
+
+        .document-copy strong { font-size:10px; }
+        .document-copy small {
+            color:var(--slate-500);
+            font-size:8px;
+            text-transform:uppercase;
+        }
+
         .message-empty {
             min-height:100%;
             display:grid;
@@ -2093,10 +2144,23 @@
 
             const liveUrl = @json(route('admin.inbox.live'));
             const timezone = @json($timezone);
+            const syncIntervalMs = @json(
+                max(
+                    2000,
+                    (int) config(
+                        'consultation.sync_interval_ms',
+                        4000
+                    )
+                )
+            );
             let activePublicId = @json($activePublicId ?: null);
             let activeChannelName = null;
             let refreshTimer = null;
             let readTimer = null;
+            let messageSyncTimer = null;
+            let listSyncTimer = null;
+            let messageSyncInFlight = false;
+            let realtimeConnected = false;
             let inboxInitialized = false;
             let notificationEnabled =
                 localStorage.getItem('md-farma-admin-notifications')
@@ -2355,6 +2419,7 @@
                     bindConversationControls();
                     subscribeActiveConversation();
                     scrollMessagesToBottom();
+                    syncActiveMessages();
                     workspace.classList.add('show-conversation');
 
                     if (pushHistory) {
@@ -2439,6 +2504,14 @@
                     return;
                 }
 
+                if (
+                    data.consultation_public_id
+                    && activePublicId
+                    && data.consultation_public_id !== activePublicId
+                ) {
+                    return;
+                }
+
                 if (stream.querySelector(`[data-message-id="${data.id}"]`)) {
                     return;
                 }
@@ -2464,6 +2537,7 @@
                     data.sender === 'admin' ? 'admin' : 'patient'
                 }`;
                 bubble.dataset.messageId = data.id;
+                bubble.dataset.messageSender = data.sender;
 
                 const sender = document.createElement('span');
                 sender.className = 'message-sender';
@@ -2477,16 +2551,57 @@
                     bubble.appendChild(paragraph);
                 }
 
-                if (data.attachment_url) {
+                const attachmentHref =
+                    data.attachment_download_url
+                    ?? data.attachment_url;
+
+                if (
+                    attachmentHref
+                    && data.attachment_type === 'document'
+                ) {
+                    const link = document.createElement('a');
+                    link.className =
+                        'message-attachment document-attachment';
+                    link.href = attachmentHref;
+                    link.target = '_blank';
+                    link.rel = 'noopener';
+                    link.download = data.attachment_name ?? '';
+
+                    const icon = document.createElement('span');
+                    icon.className = 'document-icon';
+                    icon.setAttribute('aria-hidden', 'true');
+                    icon.textContent = '↓';
+
+                    const copy = document.createElement('span');
+                    copy.className = 'document-copy';
+
+                    const name = document.createElement('strong');
+                    name.textContent =
+                        data.attachment_name
+                        ?? 'Lampiran dokumen';
+
+                    const type = document.createElement('small');
+                    type.textContent =
+                        data.attachment_extension
+                        ?? 'dokumen';
+
+                    copy.append(name, type);
+                    link.append(icon, copy);
+                    bubble.appendChild(link);
+                } else if (attachmentHref) {
                     const link = document.createElement('a');
                     link.className = 'message-attachment';
-                    link.href = data.attachment_url;
+                    link.href = attachmentHref;
                     link.target = '_blank';
                     link.rel = 'noopener';
 
                     const image = document.createElement('img');
-                    image.src = data.attachment_url;
-                    image.alt = 'Lampiran konsultasi';
+                    image.src =
+                        data.attachment_url
+                        ?? attachmentHref;
+                    image.alt =
+                        data.attachment_name
+                        ?? 'Lampiran konsultasi';
                     image.loading = 'lazy';
                     link.appendChild(image);
                     bubble.appendChild(link);
@@ -2503,6 +2618,116 @@
                 if (data.sender === 'user') {
                     scheduleMarkRead();
                 }
+            }
+
+            function latestActiveMessageId() {
+                const stream = document.getElementById('messageStream');
+
+                if (!stream) {
+                    return 0;
+                }
+
+                return Array.from(
+                    stream.querySelectorAll('[data-message-id]')
+                ).reduce(
+                    (latest, element) => Math.max(
+                        latest,
+                        Number(element.dataset.messageId) || 0
+                    ),
+                    0
+                );
+            }
+
+            async function syncActiveMessages() {
+                const shell = document.querySelector(
+                    '[data-active-conversation]'
+                );
+
+                if (
+                    !shell
+                    || !shell.dataset.messagesUrl
+                    || messageSyncInFlight
+                ) {
+                    return;
+                }
+
+                messageSyncInFlight = true;
+                const syncPublicId =
+                    shell.dataset.activeConversation;
+
+                const url = new URL(
+                    shell.dataset.messagesUrl,
+                    window.location.origin
+                );
+                url.searchParams.set(
+                    'after_id',
+                    String(latestActiveMessageId())
+                );
+
+                try {
+                    const response = await fetch(url, {
+                        credentials: 'same-origin',
+                        headers: {
+                            Accept: 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(
+                            'Pesan baru belum dapat disinkronkan.'
+                        );
+                    }
+
+                    const result = await response.json();
+                    const currentShell = document.querySelector(
+                        '[data-active-conversation]'
+                    );
+
+                    if (
+                        syncPublicId
+                        !== currentShell?.dataset.activeConversation
+                    ) {
+                        return;
+                    }
+
+                    (result.messages ?? []).forEach(appendMessage);
+
+                    if (!realtimeConnected) {
+                        setConnection(
+                            'connected',
+                            'Sinkronisasi cadangan aktif'
+                        );
+                    }
+                } catch (error) {
+                    if (!realtimeConnected) {
+                        setConnection(
+                            'disconnected',
+                            navigator.onLine
+                                ? 'Sinkronisasi tertunda'
+                                : 'Perangkat sedang offline'
+                        );
+                    }
+                } finally {
+                    messageSyncInFlight = false;
+                }
+            }
+
+            function startFallbackSync() {
+                window.clearInterval(messageSyncTimer);
+                window.clearInterval(listSyncTimer);
+
+                syncActiveMessages();
+
+                messageSyncTimer = window.setInterval(
+                    syncActiveMessages,
+                    syncIntervalMs
+                );
+
+                listSyncTimer = window.setInterval(
+                    refreshList,
+                    15000
+                );
             }
 
             function scrollMessagesToBottom() {
@@ -2870,18 +3095,25 @@
                     ?.connection;
 
                 connection?.bind('connected', () => {
+                    realtimeConnected = true;
                     setConnection('connected', 'Realtime terhubung');
+                    syncActiveMessages();
                 });
 
                 connection?.bind('disconnected', () => {
+                    realtimeConnected = false;
                     setConnection('disconnected', 'Realtime terputus');
+                    syncActiveMessages();
                 });
 
                 connection?.bind('unavailable', () => {
+                    realtimeConnected = false;
                     setConnection('disconnected', 'Realtime tidak tersedia');
+                    syncActiveMessages();
                 });
 
                 connection?.bind('error', () => {
+                    realtimeConnected = false;
                     setConnection('disconnected', 'Koneksi bermasalah');
                 });
 
@@ -2899,6 +3131,7 @@
             }
 
             bindConversationControls();
+            startFallbackSync();
 
             if (activePublicId) {
                 workspace.classList.add('show-conversation');
@@ -2914,7 +3147,33 @@
                 }
             });
 
+            window.addEventListener('online', () => {
+                syncActiveMessages();
+                refreshList();
+            });
+
+            window.addEventListener('offline', () => {
+                realtimeConnected = false;
+                setConnection(
+                    'disconnected',
+                    'Perangkat sedang offline'
+                );
+            });
+
+            window.addEventListener('focus', syncActiveMessages);
+
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden) {
+                    syncActiveMessages();
+                    refreshList();
+                }
+            });
+
             window.addEventListener('beforeunload', () => {
+                window.clearInterval(messageSyncTimer);
+                window.clearInterval(listSyncTimer);
+                window.clearTimeout(refreshTimer);
+                window.clearTimeout(readTimer);
                 window.Echo?.leave('admin.inbox');
 
                 if (activeChannelName) {
