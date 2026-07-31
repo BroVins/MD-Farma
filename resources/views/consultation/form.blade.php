@@ -286,6 +286,41 @@
             box-shadow:0 0 0 3px rgba(5,150,105,.11);
         }
 
+        .password-panel {
+            padding:18px;
+            border:1px solid #a7f3d0;
+            border-radius:15px;
+            background:var(--green-50);
+        }
+
+        .password-panel-head {
+            margin-bottom:15px;
+        }
+
+        .password-panel-head strong {
+            display:block;
+            margin-bottom:5px;
+            color:var(--green-900);
+            font-size:14px;
+        }
+
+        .password-panel-head span {
+            display:block;
+            color:var(--slate-500);
+            font-size:11px;
+            line-height:1.55;
+        }
+
+        .password-grid {
+            display:grid;
+            grid-template-columns:repeat(2,minmax(0,1fr));
+            gap:14px;
+        }
+
+        .password-panel input {
+            background:#fff;
+        }
+
         .privacy {
             margin:22px 0;
             padding:14px 16px;
@@ -338,7 +373,7 @@
         @media (max-width:570px) {
             .page { margin-top:26px; }
             .intro,.form-card { padding:24px; border-radius:19px; }
-            .grid,.type-options { grid-template-columns:1fr; }
+            .grid,.type-options,.password-grid { grid-template-columns:1fr; }
             .field.full { grid-column:auto; }
         }
     </style>
@@ -380,8 +415,17 @@
                         <small>Tentukan apakah berkaitan dengan resep dokter.</small>
                     </div>
                 </div>
+                @if ($requiresHistoryPassword)
+                    <div class="step">
+                        <span>3</span>
+                        <div>
+                            <strong>Buat Password Riwayat</strong>
+                            <small>Password digunakan untuk membuka chat pada kunjungan berikutnya.</small>
+                        </div>
+                    </div>
+                @endif
                 <div class="step">
-                    <span>3</span>
+                    <span>{{ $requiresHistoryPassword ? 4 : 3 }}</span>
                     <div>
                         <strong>Lanjutkan ke chat</strong>
                         <small>Ruang chat dibuat otomatis setelah form dikirim.</small>
@@ -500,14 +544,58 @@
                             </div>
                         </div>
                     </div>
+
+
+                    @if ($requiresHistoryPassword)
+                        <div class="field full password-panel">
+                            <div class="password-panel-head">
+                                <strong>Buat Password Riwayat</strong>
+                                <span>
+                                    Password ini melindungi akses chat pada browser ini.
+                                    Gunakan minimal {{ max(8, (int) config('consultation.history_password_min_length', 10)) }} karakter dan jangan dibagikan kepada orang lain.
+                                </span>
+                            </div>
+
+                            <div class="password-grid">
+                                <div>
+                                    <label for="password_riwayat">Password Riwayat</label>
+                                    <input
+                                        id="password_riwayat"
+                                        type="password"
+                                        name="password_riwayat"
+                                        minlength="{{ max(8, (int) config('consultation.history_password_min_length', 10)) }}"
+                                        maxlength="128"
+                                        autocomplete="new-password"
+                                        placeholder="Buat password yang mudah diingat"
+                                        required
+                                    >
+                                </div>
+
+                                <div>
+                                    <label for="password_riwayat_confirmation">Konfirmasi password</label>
+                                    <input
+                                        id="password_riwayat_confirmation"
+                                        type="password"
+                                        name="password_riwayat_confirmation"
+                                        minlength="{{ max(8, (int) config('consultation.history_password_min_length', 10)) }}"
+                                        maxlength="128"
+                                        autocomplete="new-password"
+                                        placeholder="Ketik ulang password"
+                                        required
+                                    >
+                                </div>
+                            </div>
+                        </div>
+                    @endif
                 </div>
 
                 <div class="privacy">
                     <span class="lock">✓</span>
                     <div>
                         <strong>Akses konsultasi bersifat privat</strong>
-                        Ruang chat terikat pada sesi browser ini. Jangan
-                        membagikan perangkat atau alamat chat kepada pihak lain.
+                        Riwayat dilindungi oleh cookie perangkat dan Password
+                        Riwayat. Jangan membagikan password, perangkat, atau
+                        alamat chat kepada pihak lain.
                     </div>
                 </div>
 

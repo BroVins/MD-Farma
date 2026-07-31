@@ -638,6 +638,24 @@
             box-shadow: 0 8px 23px rgba(24, 183, 165, .09);
         }
 
+        .message-row.classification-notice .message {
+            max-width: min(84%, 690px);
+            border-color: #bfdbfe;
+            border-left: 4px solid #3b82f6;
+            background: linear-gradient(135deg, #f8fbff 0%, #eef6ff 100%);
+            box-shadow: 0 8px 24px rgba(37, 99, 235, .08);
+        }
+
+        .message-row.classification-notice .message-sender {
+            display: block;
+            color: #1d4ed8;
+        }
+
+        .message-row.classification-notice .message-avatar {
+            background: linear-gradient(145deg, #2563eb, #60a5fa);
+            box-shadow: 0 5px 14px rgba(37, 99, 235, .18);
+        }
+
         .message-sender {
             display: block;
             margin-bottom: 4px;
@@ -1481,6 +1499,26 @@
                 </div>
             @endif
 
+            @if (
+                ! $isAdminView
+                && $consultation->status === 'selesai'
+                && $patientHistoryAvailableUntil
+            )
+                <div class="notice-wrap">
+                    <div class="notice">
+                        <span class="notice-icon" aria-hidden="true">⏳</span>
+                        <strong>
+                            Riwayat ini dapat dibuka sampai
+                            {{ $patientHistoryAvailableUntil
+                                ->timezone($timezone)
+                                ->format('d M Y, H.i') }} WIB.
+                            Setelah itu, riwayat hanya tersedia sebagai arsip
+                            internal MD Farma.
+                        </strong>
+                    </div>
+                </div>
+            @endif
+
             <div class="consultation-meta">
                 <div class="meta-item">
                     <span class="meta-icon" aria-hidden="true">
@@ -1627,9 +1665,13 @@
                         $isIncoming = $isAdminView
                             ? $chat->sender === 'user'
                             : $chat->sender === 'admin';
-                        $senderLabel = $chat->sender === 'admin'
-                            ? 'Apoteker'
-                            : 'Pasien';
+                        $isClassificationNotice =
+                            $chat->isClassificationNotice();
+                        $senderLabel = $isClassificationNotice
+                            ? 'Pemberitahuan layanan · MD Farma'
+                            : ($chat->sender === 'admin'
+                                ? 'Apoteker'
+                                : 'Pasien');
                     @endphp
 
                     @if ($lastDate !== $dateKey)
@@ -1653,7 +1695,11 @@
                     @endif
 
                     <div
-                        class="message-row {{ $isIncoming ? 'incoming' : 'outgoing' }}"
+                        class="message-row {{ $isIncoming ? 'incoming' : 'outgoing' }} {{
+                            $isClassificationNotice
+                                ? 'classification-notice'
+                                : ''
+                        }}"
                         data-message-id="{{ $chat->id }}"
                         data-message-date="{{ $dateKey }}"
                     >
@@ -1752,6 +1798,12 @@
             @if ($consultation->status === 'selesai')
                 <div class="status-finished">
                     Konsultasi telah selesai. Pesan baru tidak dapat dikirim.
+                    @if (! $isAdminView && $patientHistoryAvailableUntil)
+                        Riwayat tersedia sampai
+                        {{ $patientHistoryAvailableUntil
+                            ->timezone($timezone)
+                            ->format('d M Y, H.i') }} WIB.
+                    @endif
                 </div>
             @else
                 <div class="composer-panel">
@@ -1992,6 +2044,9 @@
             const syncUrl = @json(
                 route('chat.messages', $consultation)
             );
+            const historyAccessUrl = @json(
+                route('consultation.entry')
+            );
             const syncIntervalMs = @json(
                 max(
                     2000,
@@ -2138,9 +2193,13 @@
                 const incoming = isAdminView
                     ? data.sender === 'user'
                     : data.sender === 'admin';
+                const isClassificationNotice =
+                    data.message_kind === 'classification_notice';
                 const date = new Date(data.created_at);
                 const row = document.createElement('div');
-                row.className = `message-row ${incoming ? 'incoming' : 'outgoing'}`;
+                row.className = `message-row ${
+                    incoming ? 'incoming' : 'outgoing'
+                }${isClassificationNotice ? ' classification-notice' : ''}`;
                 row.dataset.messageId = data.id;
                 row.dataset.messageDate = dateKey(data.created_at);
 
@@ -2157,9 +2216,12 @@
 
                 const sender = document.createElement('strong');
                 sender.className = 'message-sender';
-                sender.textContent = data.sender === 'admin'
-                    ? 'Apoteker'
-                    : 'Pasien';
+                sender.textContent = isClassificationNotice
+                    ? (data.system_label
+                        ?? 'Pemberitahuan layanan · MD Farma')
+                    : (data.sender === 'admin'
+                        ? 'Apoteker'
+                        : 'Pasien');
                 bubble.appendChild(sender);
 
                 if (data.message) {
@@ -2274,6 +2336,14 @@
                             'X-Requested-With': 'XMLHttpRequest',
                         },
                     });
+
+                    if (response.status === 423) {
+                        const locked = await response.json().catch(() => ({}));
+                        window.location.assign(
+                            locked.redirect ?? historyAccessUrl
+                        );
+                        return;
+                    }
 
                     if (!response.ok) {
                         throw new Error(
@@ -2607,6 +2677,13 @@
                     });
 
                     const result = await response.json().catch(() => ({}));
+
+                    if (response.status === 423) {
+                        window.location.assign(
+                            result.redirect ?? historyAccessUrl
+                        );
+                        return;
+                    }
 
                     if (!response.ok) {
                         const errors = result.errors

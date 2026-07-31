@@ -83,6 +83,14 @@ class AdminDashboardActivity implements ShouldBroadcastNow
                     'Status konsultasi diperbarui.',
                     false,
                 ],
+                'classification_notice' => [
+                    'Pemberitahuan klasifikasi terkirim',
+                    'Pemberitahuan klasifikasi untuk '
+                        .$this->consultation->nama
+                        .' berhasil dikirim.',
+                    'Pemberitahuan klasifikasi berhasil dikirim.',
+                    false,
+                ],
                 default => [
                     'Dashboard diperbarui',
                     'Data konsultasi telah diperbarui.',

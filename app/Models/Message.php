@@ -18,6 +18,21 @@ class Message extends Model
         return $this->belongsTo(Consultation::class);
     }
 
+
+    public function classificationNotice()
+    {
+        return $this->hasOne(
+            ConsultationClassificationNotice::class
+        );
+    }
+
+    public function isClassificationNotice(): bool
+    {
+        return $this->relationLoaded('classificationNotice')
+            ? $this->classificationNotice !== null
+            : $this->classificationNotice()->exists();
+    }
+
     public function attachmentName(): ?string
     {
         if (! $this->image) {

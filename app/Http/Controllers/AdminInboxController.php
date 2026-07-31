@@ -2,8 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\AdminDashboardActivity;
+use App\Events\AdminInboxActivity;
+use App\Events\MessageSent;
 use App\Models\AdminConsultationRead;
 use App\Models\Consultation;
+use App\Models\Message;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
@@ -12,7 +16,11 @@ use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
+use Throwable;
 
 class AdminInboxController extends Controller
 {
@@ -41,8 +49,12 @@ class AdminInboxController extends Controller
 
         $consultation->load([
             'messages' => fn ($query) =>
-                $query->oldest('id'),
+                $query->with('classificationNotice')->oldest('id'),
             'lastMessage',
+            'classificationLogs.admin',
+            'classificationLogs.notice',
+            'classificationScreenings.admin',
+            'consultationOutcomes.admin',
         ]);
 
         $timezone = config(
@@ -121,6 +133,713 @@ class AdminInboxController extends Controller
         ]);
     }
 
+    public function updateClassification(
+        Request $request,
+        Consultation $consultation
+    ): JsonResponse|\Illuminate\Http\RedirectResponse {
+        $validated = $request->validate([
+            'service_classification' => [
+                'required',
+                'string',
+                Rule::in(array_keys(
+                    Consultation::serviceClassificationOptions()
+                )),
+            ],
+            'classification_reason' => [
+                'nullable',
+                'string',
+                'max:1000',
+            ],
+            'send_classification_notice' => [
+                'nullable',
+                'boolean',
+            ],
+        ]);
+
+        $adminId = (int) Auth::guard('admin')->id();
+        $sendNotice = (bool) (
+            $validated['send_classification_notice'] ?? false
+        );
+
+        $result = DB::transaction(
+            function () use (
+                $consultation,
+                $validated,
+                $adminId,
+                $sendNotice
+            ): array {
+                $lockedConsultation = Consultation::query()
+                    ->lockForUpdate()
+                    ->findOrFail($consultation->getKey());
+
+                $previousClassification =
+                    $lockedConsultation->service_classification;
+
+                $newClassification =
+                    $validated['service_classification'];
+
+                $reason = trim((string) (
+                    $validated['classification_reason'] ?? ''
+                ));
+
+                if (
+                    $previousClassification !== null
+                    && $previousClassification !== $newClassification
+                    && $reason === ''
+                ) {
+                    throw ValidationException::withMessages([
+                        'classification_reason' =>
+                            'Alasan wajib diisi ketika kategori diubah.',
+                    ]);
+                }
+
+                if ($previousClassification === $newClassification) {
+                    $lockedConsultation->load([
+                        'classificationLogs.admin',
+                        'classificationLogs.notice',
+                        'classificationScreenings.admin',
+                        'consultationOutcomes.admin',
+                    ]);
+
+                    return [
+                        'consultation' => $lockedConsultation,
+                        'changed' => false,
+                        'previous' => $previousClassification,
+                        'notice_message' => null,
+                    ];
+                }
+
+                $lockedConsultation->forceFill([
+                    'service_classification' =>
+                        $newClassification,
+                    'classified_by_admin_id' => $adminId,
+                    'classified_at' => now(),
+                ])->save();
+
+                $classificationLog =
+                    $lockedConsultation->classificationLogs()->create([
+                        'admin_id' => $adminId,
+                        'previous_classification' =>
+                            $previousClassification,
+                        'new_classification' => $newClassification,
+                        'reason' => $reason !== '' ? $reason : null,
+                    ]);
+
+                $noticeMessage = null;
+
+                if (
+                    $sendNotice
+                    && $lockedConsultation->status !== 'aktif'
+                ) {
+                    throw ValidationException::withMessages([
+                        'send_classification_notice' =>
+                            'Aktifkan kembali konsultasi sebelum mengirim pemberitahuan.',
+                    ]);
+                }
+
+                if ($sendNotice) {
+                    $template = Consultation::classificationNoticeTemplate(
+                        $newClassification
+                    );
+
+                    if ($template === null) {
+                        throw ValidationException::withMessages([
+                            'send_classification_notice' =>
+                                'Template pemberitahuan belum tersedia.',
+                        ]);
+                    }
+
+                    $noticeMessage = $lockedConsultation
+                        ->messages()
+                        ->create([
+                            'sender' => 'admin',
+                            'message' => $template['message'],
+                            'image' => null,
+                        ]);
+
+                    $consultationChanges = [
+                        'last_message_at' =>
+                            $noticeMessage->created_at,
+                        'last_message_sender' => 'admin',
+                    ];
+
+                    if (! $lockedConsultation->first_admin_reply_at) {
+                        $consultationChanges['first_admin_reply_at'] =
+                            $noticeMessage->created_at;
+                    }
+
+                    $lockedConsultation
+                        ->forceFill($consultationChanges)
+                        ->save();
+
+                    $classificationNotice =
+                        $lockedConsultation
+                            ->classificationNotices()
+                            ->create([
+                                'classification_log_id' =>
+                                    $classificationLog->id,
+                                'message_id' => $noticeMessage->id,
+                                'admin_id' => $adminId,
+                                'template_code' => $template['code'],
+                                'service_classification' =>
+                                    $newClassification,
+                                'content_snapshot' =>
+                                    $template['message'],
+                                'sent_at' =>
+                                    $noticeMessage->created_at,
+                            ]);
+
+                    $noticeMessage->setRelation(
+                        'classificationNotice',
+                        $classificationNotice
+                    );
+                }
+
+                $lockedConsultation->load([
+                    'classificationLogs.admin',
+                    'classificationLogs.notice',
+                    'classificationScreenings.admin',
+                    'consultationOutcomes.admin',
+                ]);
+
+                return [
+                    'consultation' => $lockedConsultation,
+                    'changed' => true,
+                    'previous' => $previousClassification,
+                    'notice_message' => $noticeMessage,
+                ];
+            }
+        );
+
+        /** @var Consultation $updatedConsultation */
+        $updatedConsultation = $result['consultation'];
+
+        /** @var Message|null $noticeMessage */
+        $noticeMessage = $result['notice_message'];
+
+        $previousLabel = $result['previous']
+            ? (Consultation::SERVICE_CLASSIFICATIONS[
+                $result['previous']
+            ] ?? $result['previous'])
+            : null;
+
+        if (! $result['changed']) {
+            $message = 'Klasifikasi tidak berubah.';
+        } elseif ($previousLabel) {
+            $message = 'Klasifikasi diubah dari '
+                .$previousLabel.' menjadi '
+                .$updatedConsultation
+                    ->serviceClassificationLabel().'.';
+        } else {
+            $message = 'Klasifikasi awal disimpan sebagai '
+                .$updatedConsultation
+                    ->serviceClassificationLabel().'.';
+        }
+
+        $noticePayload = null;
+        $realtimeDelivered = null;
+
+        if ($noticeMessage) {
+            [$noticePayload, $realtimeDelivered] =
+                $this->broadcastClassificationNotice(
+                    $updatedConsultation,
+                    $noticeMessage
+                );
+
+            $message .= ' Pemberitahuan klasifikasi dikirim kepada pasien.';
+        }
+
+        if ($request->expectsJson()) {
+            $timezone = config(
+                'analytics.timezone',
+                'Asia/Jakarta'
+            );
+
+            return response()->json([
+                'success' => true,
+                'changed' => $result['changed'],
+                'message' => $message,
+                'classification' =>
+                    $updatedConsultation->service_classification,
+                'classificationLabel' =>
+                    $updatedConsultation
+                        ->serviceClassificationLabel(),
+                'classifiedAt' => $updatedConsultation
+                    ->classified_at
+                    ?->toIso8601String(),
+                'noticeSent' => $noticeMessage !== null,
+                'noticeMessage' => $noticePayload,
+                'realtimeDelivered' => $realtimeDelivered,
+                'screeningComplete' => $updatedConsultation
+                    ->screeningProgress()['is_complete'],
+                'screeningLabel' => $updatedConsultation
+                    ->screeningProgress()['label'],
+                'screeningClass' => $updatedConsultation
+                    ->screeningProgress()['class'],
+                'screeningHtml' => view(
+                    'admin.inbox.partials.screening-panel',
+                    [
+                        'consultation' => $updatedConsultation,
+                        'timezone' => $timezone,
+                    ]
+                )->render(),
+                'outcomeComplete' => $updatedConsultation
+                    ->outcomeProgress()['is_complete'],
+                'outcomeLabel' => $updatedConsultation
+                    ->outcomeProgress()['label'],
+                'outcomeClass' => $updatedConsultation
+                    ->outcomeProgress()['class'],
+                'outcomeHtml' => view(
+                    'admin.inbox.partials.outcome-panel',
+                    [
+                        'consultation' => $updatedConsultation,
+                        'timezone' => $timezone,
+                    ]
+                )->render(),
+                'historyHtml' => view(
+                    'admin.inbox.partials.classification-history',
+                    [
+                        'consultation' => $updatedConsultation,
+                        'timezone' => $timezone,
+                    ]
+                )->render(),
+            ]);
+        }
+
+        return back()->with('success', $message);
+    }
+
+    public function updateScreening(
+        Request $request,
+        Consultation $consultation
+    ): JsonResponse|\Illuminate\Http\RedirectResponse {
+        $validated = $request->validate([
+            'answers' => ['nullable', 'array'],
+            'answers.*' => ['nullable'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $adminId = (int) Auth::guard('admin')->id();
+
+        $updatedConsultation = DB::transaction(
+            function () use (
+                $consultation,
+                $validated,
+                $adminId
+            ): Consultation {
+                $lockedConsultation = Consultation::query()
+                    ->lockForUpdate()
+                    ->findOrFail($consultation->getKey());
+
+                $classification =
+                    $lockedConsultation->service_classification;
+
+                $template = Consultation::screeningTemplate(
+                    $classification
+                );
+
+                if ($template === null) {
+                    throw ValidationException::withMessages([
+                        'service_classification' =>
+                            'Tetapkan klasifikasi pelayanan sebelum mengisi skrining.',
+                    ]);
+                }
+
+                $allowedKeys = array_keys($template['items']);
+                $submittedAnswers = (array) (
+                    $validated['answers'] ?? []
+                );
+
+                $answers = [];
+
+                foreach ($allowedKeys as $key) {
+                    $answers[$key] = array_key_exists(
+                        $key,
+                        $submittedAnswers
+                    );
+                }
+
+                $requiredCount = count($allowedKeys);
+                $completedCount = count(
+                    array_filter($answers)
+                );
+
+                $notes = trim((string) (
+                    $validated['notes'] ?? ''
+                ));
+
+                $notesRequired = (bool) (
+                    $template['notes_required'] ?? false
+                );
+
+                $isComplete = $requiredCount > 0
+                    && $completedCount === $requiredCount
+                    && (! $notesRequired || $notes !== '');
+
+                $classificationLog =
+                    $lockedConsultation
+                        ->classificationLogs()
+                        ->where(
+                            'new_classification',
+                            $classification
+                        )
+                        ->first();
+
+                $lockedConsultation
+                    ->classificationScreenings()
+                    ->create([
+                        'classification_log_id' =>
+                            $classificationLog?->id,
+                        'admin_id' => $adminId,
+                        'service_classification' =>
+                            $classification,
+                        'answers' => $answers,
+                        'notes' => $notes !== '' ? $notes : null,
+                        'required_count' => $requiredCount,
+                        'completed_count' => $completedCount,
+                        'is_complete' => $isComplete,
+                        'completed_at' => $isComplete
+                            ? now()
+                            : null,
+                    ]);
+
+                $lockedConsultation->load([
+                    'classificationLogs.admin',
+                    'classificationLogs.notice',
+                    'classificationScreenings.admin',
+                    'consultationOutcomes.admin',
+                ]);
+
+                return $lockedConsultation;
+            }
+        );
+
+        $progress = $updatedConsultation
+            ->screeningProgress();
+
+        if ($progress['is_complete']) {
+            $message = 'Skrining lengkap dan tersimpan.';
+        } elseif (
+            $progress['completed'] === $progress['required']
+            && $progress['notes_required']
+            && ! $progress['notes_complete']
+        ) {
+            $message = 'Checklist tersimpan. Isi catatan wajib agar skrining dinyatakan lengkap.';
+        } else {
+            $message = 'Progres skrining tersimpan ('
+                .$progress['completed'].'/'
+                .$progress['required'].').';
+        }
+
+        if ($request->expectsJson()) {
+            $timezone = config(
+                'analytics.timezone',
+                'Asia/Jakarta'
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'screeningComplete' =>
+                    $progress['is_complete'],
+                'screeningLabel' => $progress['label'],
+                'screeningClass' => $progress['class'],
+                'screeningHtml' => view(
+                    'admin.inbox.partials.screening-panel',
+                    [
+                        'consultation' => $updatedConsultation,
+                        'timezone' => $timezone,
+                    ]
+                )->render(),
+                'outcomeComplete' => $updatedConsultation
+                    ->outcomeProgress()['is_complete'],
+                'outcomeLabel' => $updatedConsultation
+                    ->outcomeProgress()['label'],
+                'outcomeClass' => $updatedConsultation
+                    ->outcomeProgress()['class'],
+                'outcomeHtml' => view(
+                    'admin.inbox.partials.outcome-panel',
+                    [
+                        'consultation' => $updatedConsultation,
+                        'timezone' => $timezone,
+                    ]
+                )->render(),
+            ]);
+        }
+
+        return back()->with('success', $message);
+    }
+
+
+    public function updateOutcome(
+        Request $request,
+        Consultation $consultation
+    ): JsonResponse|\Illuminate\Http\RedirectResponse {
+        $validated = $request->validate([
+            'outcome_code' => [
+                'required',
+                'string',
+                'max:60',
+            ],
+            'notes' => [
+                'nullable',
+                'string',
+                'max:3000',
+            ],
+        ]);
+
+        $adminId = (int) Auth::guard('admin')->id();
+
+        $result = DB::transaction(
+            function () use (
+                $consultation,
+                $validated,
+                $adminId
+            ): array {
+                $lockedConsultation = Consultation::query()
+                    ->lockForUpdate()
+                    ->findOrFail($consultation->getKey());
+
+                $classification =
+                    $lockedConsultation->service_classification;
+
+                $template = Consultation::finalOutcomeTemplate(
+                    $classification
+                );
+
+                if ($template === null) {
+                    throw ValidationException::withMessages([
+                        'service_classification' =>
+                            'Tetapkan klasifikasi pelayanan sebelum menentukan hasil akhir.',
+                    ]);
+                }
+
+                $screeningProgress = $lockedConsultation
+                    ->screeningProgress();
+
+                if (! $screeningProgress['is_complete']) {
+                    throw ValidationException::withMessages([
+                        'outcome_code' =>
+                            'Lengkapi skrining sebelum menentukan hasil akhir pelayanan.',
+                    ]);
+                }
+
+                $outcomeCode = (string) $validated['outcome_code'];
+                $outcomeLabel = $template['options'][$outcomeCode]
+                    ?? null;
+
+                if ($outcomeLabel === null) {
+                    throw ValidationException::withMessages([
+                        'outcome_code' =>
+                            'Hasil akhir tidak sesuai dengan klasifikasi pelayanan.',
+                    ]);
+                }
+
+                $notes = trim((string) (
+                    $validated['notes'] ?? ''
+                ));
+
+                if (
+                    (bool) ($template['notes_required'] ?? false)
+                    && $notes === ''
+                ) {
+                    throw ValidationException::withMessages([
+                        'notes' =>
+                            'Catatan hasil akhir wajib diisi untuk klasifikasi ini.',
+                    ]);
+                }
+
+                $classificationLog =
+                    $lockedConsultation
+                        ->classificationLogs()
+                        ->where(
+                            'new_classification',
+                            $classification
+                        )
+                        ->first();
+
+                $currentScreening =
+                    $lockedConsultation->currentScreening();
+
+                if ($currentScreening === null) {
+                    throw ValidationException::withMessages([
+                        'outcome_code' =>
+                            'Snapshot skrining aktif tidak ditemukan.',
+                    ]);
+                }
+
+                $currentOutcome =
+                    $lockedConsultation
+                        ->consultationOutcomes()
+                        ->where(
+                            'service_classification',
+                            $classification
+                        )
+                        ->where(
+                            'screening_id',
+                            $currentScreening->id
+                        )
+                        ->when(
+                            $classificationLog !== null,
+                            fn ($query) => $query->where(
+                                'classification_log_id',
+                                $classificationLog->id
+                            ),
+                            fn ($query) => $query->whereNull(
+                                'classification_log_id'
+                            )
+                        )
+                        ->first();
+
+                if (
+                    $currentOutcome
+                    && $currentOutcome->outcome_code === $outcomeCode
+                    && trim((string) $currentOutcome->notes) === $notes
+                ) {
+                    $lockedConsultation->load([
+                        'classificationLogs.admin',
+                        'classificationLogs.notice',
+                        'classificationScreenings.admin',
+                        'consultationOutcomes.admin',
+                    ]);
+
+                    return [
+                        'consultation' => $lockedConsultation,
+                        'changed' => false,
+                    ];
+                }
+
+                $lockedConsultation
+                    ->consultationOutcomes()
+                    ->create([
+                        'classification_log_id' =>
+                            $classificationLog?->id,
+                        'screening_id' => $currentScreening->id,
+                        'admin_id' => $adminId,
+                        'service_classification' =>
+                            $classification,
+                        'outcome_code' => $outcomeCode,
+                        'outcome_label' => $outcomeLabel,
+                        'notes' => $notes !== '' ? $notes : null,
+                    ]);
+
+                $lockedConsultation->load([
+                    'classificationLogs.admin',
+                    'classificationLogs.notice',
+                    'classificationScreenings.admin',
+                    'consultationOutcomes.admin',
+                ]);
+
+                return [
+                    'consultation' => $lockedConsultation,
+                    'changed' => true,
+                ];
+            }
+        );
+
+        /** @var Consultation $updatedConsultation */
+        $updatedConsultation = $result['consultation'];
+
+        $progress = $updatedConsultation->outcomeProgress();
+
+        $message = $result['changed']
+            ? 'Hasil akhir pelayanan tersimpan sebagai '
+                .$progress['label'].'.'
+            : 'Hasil akhir tidak berubah.';
+
+        if ($request->expectsJson()) {
+            $timezone = config(
+                'analytics.timezone',
+                'Asia/Jakarta'
+            );
+
+            return response()->json([
+                'success' => true,
+                'changed' => $result['changed'],
+                'message' => $message,
+                'outcomeComplete' => $progress['is_complete'],
+                'outcomeLabel' => $progress['label'],
+                'outcomeClass' => $progress['class'],
+                'screeningComplete' => $updatedConsultation
+                    ->screeningProgress()['is_complete'],
+                'outcomeHtml' => view(
+                    'admin.inbox.partials.outcome-panel',
+                    [
+                        'consultation' => $updatedConsultation,
+                        'timezone' => $timezone,
+                    ]
+                )->render(),
+            ]);
+        }
+
+        return back()->with('success', $message);
+    }
+
+    private function broadcastClassificationNotice(
+        Consultation $consultation,
+        Message $message
+    ): array {
+        $message->setRelation('consultation', $consultation);
+        $event = new MessageSent($message);
+        $payload = $event->broadcastWith();
+        $broadcasted = true;
+
+        try {
+            event($event);
+        } catch (Throwable $exception) {
+            $broadcasted = false;
+
+            Log::warning(
+                'Pemberitahuan klasifikasi tersimpan, tetapi broadcast realtime gagal.',
+                [
+                    'consultation_id' => $consultation->id,
+                    'message_id' => $message->id,
+                    'exception' => $exception::class,
+                ]
+            );
+        }
+
+        try {
+            event(
+                new AdminInboxActivity(
+                    $consultation->fresh(['lastMessage']),
+                    'admin_reply',
+                    $message
+                )
+            );
+        } catch (Throwable $exception) {
+            Log::warning(
+                'Sinkronisasi inbox untuk pemberitahuan klasifikasi gagal.',
+                [
+                    'consultation_id' => $consultation->id,
+                    'message_id' => $message->id,
+                    'exception' => $exception::class,
+                ]
+            );
+        }
+
+        try {
+            event(
+                new AdminDashboardActivity(
+                    $consultation->fresh(),
+                    'classification_notice',
+                    $message
+                )
+            );
+        } catch (Throwable $exception) {
+            Log::warning(
+                'Sinkronisasi dashboard untuk pemberitahuan klasifikasi gagal.',
+                [
+                    'consultation_id' => $consultation->id,
+                    'message_id' => $message->id,
+                    'exception' => $exception::class,
+                ]
+            );
+        }
+
+        return [$payload, $broadcasted];
+    }
+
     private function renderInbox(
         Request $request,
         ?Consultation $selected = null
@@ -135,8 +854,12 @@ class AdminInboxController extends Controller
         if ($selected) {
             $selected->load([
                 'messages' => fn ($query) =>
-                    $query->oldest('id'),
+                    $query->with('classificationNotice')->oldest('id'),
                 'lastMessage',
+                'classificationLogs.admin',
+                'classificationLogs.notice',
+                'classificationScreenings.admin',
+                'consultationOutcomes.admin',
             ]);
 
             $state = $this->resolveInboxState(

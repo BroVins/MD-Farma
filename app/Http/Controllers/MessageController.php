@@ -54,6 +54,7 @@ class MessageController extends Controller
 
         $messages = $consultation
             ->messages()
+            ->with('classificationNotice')
             ->where('id', '>', $afterId)
             ->oldest('id')
             ->limit(200)

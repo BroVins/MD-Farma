@@ -22,4 +22,28 @@ class Admin extends Authenticatable
             AdminConsultationRead::class
         );
     }
+
+
+    public function classifiedConsultations()
+    {
+        return $this->hasMany(
+            Consultation::class,
+            'classified_by_admin_id'
+        );
+    }
+
+    public function classificationChanges()
+    {
+        return $this->hasMany(
+            ConsultationClassificationLog::class
+        );
+    }
+
+
+    public function classificationNotices()
+    {
+        return $this->hasMany(
+            ConsultationClassificationNotice::class
+        );
+    }
 }

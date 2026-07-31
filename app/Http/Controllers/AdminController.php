@@ -111,6 +111,68 @@ class AdminController extends Controller
             'status' => ['required', 'in:aktif,selesai'],
         ]);
 
+        if ($validated['status'] === 'selesai') {
+            if (! $consultation->service_classification) {
+                $message = 'Tetapkan klasifikasi pelayanan sebelum menyelesaikan konsultasi.';
+
+                if ($request->expectsJson()) {
+                    return response()->json([
+                        'message' => $message,
+                    ], 422);
+                }
+
+                return back()->withErrors([
+                    'status' => $message,
+                ]);
+            }
+
+            $screeningProgress = $consultation
+                ->screeningProgress();
+
+            if (! $screeningProgress['is_complete']) {
+                $message = 'Lengkapi checklist skrining ('
+                    .$screeningProgress['completed'].'/'
+                    .$screeningProgress['required']
+                    .') sebelum menyelesaikan konsultasi.';
+
+                if (
+                    $screeningProgress['completed']
+                        === $screeningProgress['required']
+                    && $screeningProgress['notes_required']
+                    && ! $screeningProgress['notes_complete']
+                ) {
+                    $message = 'Isi catatan skrining wajib sebelum menyelesaikan konsultasi.';
+                }
+
+                if ($request->expectsJson()) {
+                    return response()->json([
+                        'message' => $message,
+                    ], 422);
+                }
+
+                return back()->withErrors([
+                    'status' => $message,
+                ]);
+            }
+
+            $outcomeProgress = $consultation
+                ->outcomeProgress();
+
+            if (! $outcomeProgress['is_complete']) {
+                $message = 'Tetapkan hasil akhir pelayanan sebelum menyelesaikan konsultasi.';
+
+                if ($request->expectsJson()) {
+                    return response()->json([
+                        'message' => $message,
+                    ], 422);
+                }
+
+                return back()->withErrors([
+                    'status' => $message,
+                ]);
+            }
+        }
+
         $consultation->forceFill([
             'status' => $validated['status'],
             'closed_at' => $validated['status'] === 'selesai'

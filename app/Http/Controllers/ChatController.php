@@ -14,7 +14,8 @@ class ChatController extends Controller
         Consultation $consultation
     ): View {
         $consultation->load([
-            'messages' => fn ($query) => $query->oldest(),
+            'messages' => fn ($query) =>
+                $query->with('classificationNotice')->oldest(),
         ]);
 
         AnalyticsEvent::recordOnce(
@@ -50,6 +51,8 @@ class ChatController extends Controller
                 'started' => $started,
                 'startedDateKey' => $startedDateKey,
                 'lastDate' => $startedDateKey,
+                'patientHistoryAvailableUntil' =>
+                    $consultation->patientHistoryAvailableUntil(),
             ]
         );
     }

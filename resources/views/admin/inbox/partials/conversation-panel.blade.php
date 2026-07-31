@@ -3,6 +3,19 @@
     $startedLocal = $consultation->created_at
         ->copy()
         ->timezone($timezone);
+
+    $classificationOptions =
+        \App\Models\Consultation::serviceClassificationOptions();
+
+    $classificationNoticeTemplates =
+        \App\Models\Consultation::CLASSIFICATION_NOTICE_TEMPLATES;
+
+    $classifiedAtLocal = $consultation->classified_at
+        ?->copy()
+        ->timezone($timezone);
+
+    $screeningProgress = $consultation->screeningProgress();
+    $outcomeProgress = $consultation->outcomeProgress();
 @endphp
 
 <section
@@ -71,7 +84,17 @@
                     <button
                         type="submit"
                         class="header-action finish-action"
-                        title="Tandai konsultasi sebagai selesai"
+                        data-finish-button
+                        title="{{
+                            $screeningProgress['is_complete']
+                                && $outcomeProgress['is_complete']
+                                ? 'Tandai konsultasi sebagai selesai'
+                                : 'Lengkapi klasifikasi, skrining, dan hasil akhir sebelum menyelesaikan konsultasi'
+                        }}"
+                        @disabled(
+                            ! $screeningProgress['is_complete']
+                            || ! $outcomeProgress['is_complete']
+                        )
                     >
                         <svg
                             viewBox="0 0 24 24"
@@ -110,6 +133,235 @@
             </button>
         </div>
     </header>
+
+    <section
+        class="classification-bar"
+        aria-label="Klasifikasi pelayanan kefarmasian"
+    >
+        <div class="classification-summary">
+            <span class="classification-eyebrow">
+                Klasifikasi pelayanan
+            </span>
+
+            <div class="classification-status-row">
+                <strong
+                    class="classification-chip classification-{{
+                        $consultation->service_classification
+                            ?: 'unset'
+                    }}"
+                    data-classification-label
+                >
+                    {{ $consultation->serviceClassificationLabel() }}
+                </strong>
+
+                <span class="classification-origin">
+                    Pilihan pasien:
+                    <b>
+                        {{
+                            $consultation->jenis_konsultasi === 'resep'
+                                ? 'Memiliki resep'
+                                : 'Tanpa resep'
+                        }}
+                    </b>
+                </span>
+
+
+                <span
+                    class="screening-chip screening-{{
+                        $screeningProgress['class']
+                    }}"
+                    data-screening-chip
+                    data-screening-complete="{{
+                        $screeningProgress['is_complete'] ? '1' : '0'
+                    }}"
+                >
+                    {{ $screeningProgress['label'] }}
+                </span>
+
+                <span
+                    class="outcome-chip outcome-{{
+                        $outcomeProgress['class']
+                    }}"
+                    data-outcome-chip
+                    data-outcome-complete="{{
+                        $outcomeProgress['is_complete'] ? '1' : '0'
+                    }}"
+                >
+                    {{ $outcomeProgress['label'] }}
+                </span>
+            </div>
+
+            <small data-classification-meta>
+                @if ($classifiedAtLocal)
+                    Terakhir ditetapkan
+                    {{
+                        $classifiedAtLocal
+                            ->locale('id')
+                            ->isoFormat('D MMM YYYY, HH.mm')
+                    }}
+                    WIB
+                @else
+                    Tetapkan kategori aktual setelah meninjau percakapan.
+                @endif
+            </small>
+        </div>
+
+        <form
+            class="classification-form"
+            action="{{ route(
+                'admin.inbox.classification',
+                $consultation
+            ) }}"
+            method="POST"
+            data-classification-form
+            data-current-classification="{{
+                $consultation->service_classification ?? ''
+            }}"
+        >
+            @csrf
+
+            <label for="serviceClassification">
+                Ubah klasifikasi
+            </label>
+
+            <div class="classification-control">
+                <select
+                    id="serviceClassification"
+                    name="service_classification"
+                    required
+                    data-classification-select
+                >
+                    <option value="" disabled {{
+                        $consultation->service_classification
+                            ? ''
+                            : 'selected'
+                    }}>
+                        Pilih kategori pelayanan
+                    </option>
+
+                    @foreach ($classificationOptions as $value => $label)
+                        <option
+                            value="{{ $value }}"
+                            data-notice-message="{{
+                                $classificationNoticeTemplates[$value]['message']
+                                    ?? ''
+                            }}"
+                            @selected(
+                                $consultation->service_classification
+                                    === $value
+                            )
+                        >
+                            {{ $label }}
+                        </option>
+                    @endforeach
+                </select>
+
+                <button
+                    type="submit"
+                    data-classification-submit
+                >
+                    Simpan
+                </button>
+            </div>
+
+            <div
+                class="classification-reason"
+                data-classification-reason
+                hidden
+            >
+                <label for="classificationReason">
+                    Alasan perubahan
+                    <span>Wajib</span>
+                </label>
+
+                <textarea
+                    id="classificationReason"
+                    name="classification_reason"
+                    rows="2"
+                    maxlength="1000"
+                    placeholder="Jelaskan alasan kategori pelayanan diubah."
+                    data-classification-reason-input
+                ></textarea>
+
+                <small>
+                    Alasan tersimpan pada audit internal dan tidak dikirim
+                    kepada pasien.
+                </small>
+            </div>
+
+            <div
+                class="classification-notice-preview"
+                data-classification-notice-preview
+                hidden
+            >
+                <label class="classification-notice-toggle">
+                    <input
+                        type="checkbox"
+                        name="send_classification_notice"
+                        value="1"
+                        @checked($consultation->status === 'aktif')
+                        @disabled($consultation->status !== 'aktif')
+                        data-classification-notice-toggle
+                    >
+                    <span>
+                        {{
+                            $consultation->status === 'aktif'
+                                ? 'Kirim pemberitahuan ini kepada pasien'
+                                : 'Aktifkan kembali konsultasi untuk mengirim pemberitahuan'
+                        }}
+                    </span>
+                </label>
+
+                <div class="classification-notice-card">
+                    <strong>
+                        Pratinjau pesan otomatis
+                    </strong>
+                    <p data-classification-notice-text></p>
+                    <small>
+                        Pesan dikirim sebagai pemberitahuan berdasarkan
+                        keputusan petugas yang menangani dan disimpan sebagai
+                        snapshot audit. Isi pratinjau tidak dapat diedit.
+                    </small>
+                </div>
+            </div>
+
+            <span
+                class="classification-feedback"
+                data-classification-feedback
+                aria-live="polite"
+            ></span>
+        </form>
+
+        <div
+            class="screening-slot"
+            data-screening-slot
+        >
+            @include(
+                'admin.inbox.partials.screening-panel',
+                compact('consultation', 'timezone')
+            )
+        </div>
+
+        <div
+            class="outcome-slot"
+            data-outcome-slot
+        >
+            @include(
+                'admin.inbox.partials.outcome-panel',
+                compact('consultation', 'timezone')
+            )
+        </div>
+
+        <div
+            class="classification-history-slot"
+            data-classification-history-slot
+        >
+            @include(
+                'admin.inbox.partials.classification-history',
+                compact('consultation', 'timezone')
+            )
+        </div>
+    </section>
 
     <div
         class="message-stream"
@@ -153,15 +405,21 @@
                     $message->sender === 'admin'
                         ? 'admin'
                         : 'patient'
+                }} {{
+                    $message->isClassificationNotice()
+                        ? 'classification-notice'
+                        : ''
                 }}"
                 data-message-id="{{ $message->id }}"
                 data-message-sender="{{ $message->sender }}"
             >
                 <span class="message-sender">
                     {{
-                        $message->sender === 'admin'
-                            ? 'Apoteker'
-                            : $consultation->nama
+                        $message->isClassificationNotice()
+                            ? 'Pemberitahuan layanan · MD Farma'
+                            : ($message->sender === 'admin'
+                                ? 'Apoteker'
+                                : $consultation->nama)
                     }}
                 </span>
 

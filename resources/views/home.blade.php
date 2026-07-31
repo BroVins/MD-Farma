@@ -88,6 +88,12 @@
             font: inherit;
         }
 
+        a:focus-visible,
+        button:focus-visible {
+            outline: 3px solid rgba(24, 183, 165, .38);
+            outline-offset: 3px;
+        }
+
         .container {
             width: min(1160px, calc(100% - 40px));
             margin-inline: auto;
@@ -848,6 +854,123 @@
             line-height: 1.65;
         }
 
+        .partnership-section {
+            padding: 0 0 28px;
+        }
+
+        .partnership-card {
+            position: relative;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: minmax(0, 1.2fr) minmax(290px, .8fr);
+            align-items: center;
+            gap: 44px;
+            padding: 40px;
+            border: 1px solid rgba(25, 135, 84, .15);
+            border-radius: 27px;
+            background:
+                radial-gradient(
+                    circle at 94% 8%,
+                    rgba(24, 183, 165, .15),
+                    transparent 29%
+                ),
+                linear-gradient(135deg, #ffffff, #eef9f3);
+            box-shadow: var(--shadow-md);
+        }
+
+        .partnership-copy {
+            position: relative;
+            z-index: 1;
+        }
+
+        .partnership-copy h2 {
+            max-width: 700px;
+            margin: 0 0 13px;
+            font-size: clamp(29px, 4vw, 43px);
+            line-height: 1.12;
+            letter-spacing: -.044em;
+        }
+
+        .partnership-copy > p {
+            max-width: 670px;
+            margin: 0;
+            color: var(--slate-600);
+            line-height: 1.72;
+        }
+
+        .partnership-points {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 9px;
+            margin: 22px 0 26px;
+        }
+
+        .partnership-points span {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 8px 11px;
+            border: 1px solid rgba(25, 135, 84, .13);
+            border-radius: 999px;
+            color: var(--brand-deep);
+            background: rgba(255, 255, 255, .82);
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .partnership-points i {
+            width: 18px;
+            height: 18px;
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
+            color: #fff;
+            background: var(--brand);
+            font-size: 9px;
+            font-style: normal;
+        }
+
+        .partnership-guide {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            gap: 10px;
+            padding: 21px;
+            border: 1px solid rgba(207, 220, 213, .9);
+            border-radius: 20px;
+            background: rgba(255, 255, 255, .86);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .partnership-guide strong {
+            margin-bottom: 3px;
+            font-size: 14px;
+        }
+
+        .partnership-step {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            padding: 11px;
+            border-radius: 13px;
+            color: var(--slate-700);
+            background: #f7fbf9;
+            font-size: 12px;
+            line-height: 1.45;
+        }
+
+        .partnership-step b {
+            width: 28px;
+            height: 28px;
+            flex: 0 0 auto;
+            display: grid;
+            place-items: center;
+            border-radius: 9px;
+            color: var(--brand-deep);
+            background: var(--brand-soft);
+            font-size: 11px;
+        }
+
         .cta-section {
             padding: 0 0 82px;
         }
@@ -971,8 +1094,13 @@
 
         @media (max-width: 980px) {
             .hero-grid,
-            .info-grid {
+            .info-grid,
+            .partnership-card {
                 grid-template-columns: 1fr;
+            }
+
+            .partnership-card {
+                gap: 28px;
             }
 
             .hero-grid {
@@ -1043,6 +1171,10 @@
 
             .section {
                 padding: 65px 0;
+            }
+
+            .partnership-card {
+                padding: 30px 26px;
             }
 
             .cta-card {
@@ -1126,6 +1258,19 @@
                 padding: 16px;
             }
 
+            .partnership-card {
+                padding: 25px 21px;
+                border-radius: 21px;
+            }
+
+            .partnership-actions .button {
+                width: 100%;
+            }
+
+            .partnership-guide {
+                padding: 15px;
+            }
+
             .mobile-cta {
                 position: fixed;
                 right: 12px;
@@ -1192,6 +1337,7 @@
                 <a href="#layanan">Layanan</a>
                 <a href="#operasional">Jam dan Lokasi</a>
                 <a href="#marketplace">Marketplace</a>
+                <a data-partnership-nav href="#kerja-sama">Kerja Sama</a>
                 <a class="nav-cta" href="{{ route('consultation.entry') }}">
                     Mulai Konsultasi
                 </a>
@@ -1242,6 +1388,14 @@
                             href="#marketplace"
                         >
                             Belanja Obat
+                        </a>
+
+                        <a
+                            class="button button-secondary"
+                            data-partnership-hero
+                            href="#kerja-sama"
+                        >
+                            Kerja Sama
                         </a>
                     </div>
 
@@ -1667,6 +1821,77 @@
             </div>
         </section>
 
+        <section
+            class="partnership-section"
+            id="kerja-sama"
+            aria-labelledby="partnership-title"
+        >
+            <div class="container">
+                <div class="partnership-card">
+                    <div class="partnership-copy">
+                        <span class="section-kicker">Kolaborasi dengan MD Farma</span>
+                        <h2 id="partnership-title">
+                            Punya kebutuhan atau peluang kerja sama?
+                            Mari hubungi kami.
+                        </h2>
+                        <p>
+                            Sampaikan rencana kolaborasi Anda melalui kanal
+                            WhatsApp resmi MD Farma. Halaman khusus kerja sama
+                            menyediakan kode QR, tombol WhatsApp, dan tautan
+                            yang dapat disalin dengan mudah.
+                        </p>
+
+                        <div
+                            class="partnership-points"
+                            aria-label="Keunggulan kanal kerja sama"
+                        >
+                            <span><i>✓</i>Kanal resmi</span>
+                            <span><i>✓</i>Mudah diakses</span>
+                            <span><i>✓</i>Pesan awal otomatis</span>
+                        </div>
+
+                        <div class="partnership-actions">
+                            <a
+                                class="button button-primary"
+                                href="{{ route('partnership') }}"
+                            >
+                                Buka Halaman Kerja Sama
+                                <svg
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    aria-hidden="true"
+                                >
+                                    <path d="M5 12h14M13 6l6 6-6 6"/>
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+
+                    <aside
+                        class="partnership-guide"
+                        aria-label="Langkah menghubungi MD Farma"
+                    >
+                        <strong>Tiga langkah sederhana</strong>
+                        <div class="partnership-step">
+                            <b>1</b>
+                            <span>Buka halaman kerja sama.</span>
+                        </div>
+                        <div class="partnership-step">
+                            <b>2</b>
+                            <span>Scan QR atau tekan tombol WhatsApp.</span>
+                        </div>
+                        <div class="partnership-step">
+                            <b>3</b>
+                            <span>Sampaikan kebutuhan dan kontak Anda.</span>
+                        </div>
+                    </aside>
+                </div>
+            </div>
+        </section>
+
         <section class="cta-section">
             <div class="container">
                 <div class="cta-card">
@@ -1747,6 +1972,9 @@
                 <div class="footer-links" style="margin-top: 12px;">
                     <a href="{{ route('profile') }}">
                         Profil MD Farma
+                    </a>
+                    <a href="{{ route('partnership') }}">
+                        Kerja Sama
                     </a>
                     <a
                         href="https://maps.app.goo.gl/82xaeQfUQYvyrork8"

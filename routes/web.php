@@ -19,9 +19,40 @@ Route::get(
 )->name('profile');
 
 Route::get(
+    '/kerja-sama',
+    [HomeController::class, 'partnership']
+)->name('partnership');
+
+Route::get(
     '/konsultasi',
     [ConsultationController::class, 'entry']
 )->name('consultation.entry');
+
+Route::get(
+    '/konsultasi/riwayat',
+    [ConsultationController::class, 'history']
+)->name('consultation.history');
+
+Route::post(
+    '/konsultasi/buka-riwayat',
+    [ConsultationController::class, 'unlockHistory']
+)
+    ->middleware('throttle:10,1')
+    ->name('consultation.history.unlock');
+
+Route::post(
+    '/konsultasi/aktifkan-password',
+    [ConsultationController::class, 'setupHistoryPassword']
+)
+    ->middleware('throttle:10,1')
+    ->name('consultation.history.setup');
+
+Route::post(
+    '/konsultasi/kunci-riwayat',
+    [ConsultationController::class, 'lockHistory']
+)
+    ->middleware('throttle:20,1')
+    ->name('consultation.history.lock');
 
 Route::get(
     '/konsultasi/baru',
@@ -130,6 +161,27 @@ Route::prefix('admin')
                 )
                     ->middleware('throttle:180,1')
                     ->name('inbox.read');
+
+                Route::post(
+                    '/inbox/{consultation:public_id}/classification',
+                    [AdminInboxController::class, 'updateClassification']
+                )
+                    ->middleware('throttle:30,1')
+                    ->name('inbox.classification');
+
+                Route::post(
+                    '/inbox/{consultation:public_id}/screening',
+                    [AdminInboxController::class, 'updateScreening']
+                )
+                    ->middleware('throttle:60,1')
+                    ->name('inbox.screening');
+
+                Route::post(
+                    '/inbox/{consultation:public_id}/outcome',
+                    [AdminInboxController::class, 'updateOutcome']
+                )
+                    ->middleware('throttle:60,1')
+                    ->name('inbox.outcome');
 
                 /*
                 |----------------------------------------------------------

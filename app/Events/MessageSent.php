@@ -18,7 +18,10 @@ class MessageSent implements ShouldBroadcastNow
     public function __construct(
         public Message $message
     ) {
-        $this->message->loadMissing('consultation');
+        $this->message->loadMissing([
+            'consultation',
+            'classificationNotice',
+        ]);
     }
 
     public function broadcastOn(): array
@@ -58,6 +61,15 @@ class MessageSent implements ShouldBroadcastNow
                     ->public_id,
             'sender' => $this->message->sender,
             'message' => $this->message->message,
+            'message_kind' => $this->message->classificationNotice
+                ? 'classification_notice'
+                : 'standard',
+            'system_label' => $this->message->classificationNotice
+                ? 'Pemberitahuan layanan · MD Farma'
+                : null,
+            'service_classification' => $this->message
+                ->classificationNotice
+                ?->service_classification,
             // Dipertahankan untuk kompatibilitas UI lama.
             'attachment_url' =>
                 $this->message->isImageAttachment()

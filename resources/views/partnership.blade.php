@@ -76,12 +76,21 @@
             -webkit-tap-highlight-color: transparent;
         }
 
+        a:focus-visible,
+        button:focus-visible {
+            outline: 3px solid rgba(24, 183, 165, .38);
+            outline-offset: 3px;
+        }
+
         .container {
             width: min(1120px, calc(100% - 40px));
             margin-inline: auto;
         }
 
         .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 50;
             border-bottom: 1px solid rgba(207, 220, 213, .82);
             background: rgba(255, 255, 255, .92);
             backdrop-filter: blur(16px);
@@ -148,6 +157,22 @@
             border-color: var(--brand);
             color: #fff;
             background: var(--brand);
+        }
+
+        .nav-link,
+        .whatsapp-button,
+        .copy-button {
+            transition:
+                transform .18s ease,
+                box-shadow .18s ease,
+                border-color .18s ease,
+                background .18s ease;
+        }
+
+        .nav-link:hover,
+        .whatsapp-button:hover,
+        .copy-button:hover {
+            transform: translateY(-1px);
         }
 
         main {
@@ -533,7 +558,7 @@
                 </a>
                 <a
                     class="nav-link primary"
-                    href="{{ route('consultation.create') }}"
+                    href="{{ route('consultation.entry') }}"
                 >
                     Konsultasi
                 </a>
@@ -550,9 +575,10 @@
                     <span class="accent">Apotek MD Farma</span>
                 </h1>
                 <p class="lead">
-                    Silakan scan kode QR di samping untuk terhubung ke
-                    WhatsApp resmi Apotek MD Farma. Anda juga dapat membuka
-                    WhatsApp secara langsung melalui tombol yang tersedia.
+                    Hubungi kanal WhatsApp resmi Apotek MD Farma untuk
+                    menyampaikan kebutuhan, profil singkat, dan rencana
+                    kolaborasi Anda. Gunakan kode QR atau tombol langsung
+                    yang tersedia.
                 </p>
 
                 <div class="steps" aria-label="Cara menghubungi MD Farma">
@@ -672,14 +698,11 @@
                         aria-live="polite"
                     ></p>
                 @else
-                    <div class="configuration-warning">
-                        <strong>Nomor WhatsApp belum dikonfigurasi.</strong>
-                        Jalankan kembali
-                        <code>INSTALL_KERJA_SAMA.bat</code>
-                        atau isi
-                        <code>MD_FARMA_WHATSAPP_NUMBER</code>
-                        pada file <code>.env</code>, lalu jalankan
-                        <code>php artisan optimize:clear</code>.
+                    <div class="configuration-warning" role="status">
+                        <strong>Kanal WhatsApp sedang disiapkan.</strong>
+                        Kontak kerja sama belum dapat dibuka saat ini. Silakan
+                        kembali lagi atau hubungi MD Farma melalui kanal resmi
+                        lain yang tersedia pada halaman utama.
                     </div>
                 @endif
             </section>
