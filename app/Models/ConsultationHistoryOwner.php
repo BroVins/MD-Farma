@@ -37,10 +37,44 @@ class ConsultationHistoryOwner extends Model
         );
     }
 
+
+    public function patientProfiles()
+    {
+        return $this->hasMany(
+            ConsultationPatientProfile::class,
+            'history_owner_id'
+        );
+    }
+
     public function devices()
     {
         return $this->hasMany(
             ConsultationGuest::class,
+            'history_owner_id'
+        );
+    }
+
+
+    public function deviceRevocations()
+    {
+        return $this->hasMany(
+            ConsultationDeviceRevocation::class,
+            'history_owner_id'
+        );
+    }
+
+    public function recoveries()
+    {
+        return $this->hasMany(
+            ConsultationDeviceRecovery::class,
+            'history_owner_id'
+        );
+    }
+
+    public function archiveCopyRequests()
+    {
+        return $this->hasMany(
+            ConsultationArchiveCopyRequest::class,
             'history_owner_id'
         );
     }

@@ -7,6 +7,7 @@ use App\Events\AdminInboxActivity;
 use App\Events\MessageSent;
 use App\Models\AdminConsultationRead;
 use App\Models\Consultation;
+use App\Models\ConsultationArchiveCopyRequest;
 use App\Models\Message;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
@@ -1316,6 +1317,13 @@ class AdminInboxController extends Controller
                 (clone $unreadQuery)
                     ->distinct()
                     ->count('m.consultation_id'),
+            'activeArchiveRequests' =>
+                ConsultationArchiveCopyRequest::query()
+                    ->whereIn(
+                        'status',
+                        ConsultationArchiveCopyRequest::ACTIVE_STATUSES
+                    )
+                    ->count(),
         ];
     }
 

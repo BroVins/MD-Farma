@@ -46,4 +46,20 @@ class Admin extends Authenticatable
             ConsultationClassificationNotice::class
         );
     }
+
+    public function processedArchiveCopyRequests()
+    {
+        return $this->hasMany(
+            ConsultationArchiveCopyRequest::class,
+            'processed_by_admin_id'
+        );
+    }
+
+    public function archiveCopyRequestLogs()
+    {
+        return $this->hasMany(
+            ConsultationArchiveCopyRequestLog::class
+        );
+    }
+
 }

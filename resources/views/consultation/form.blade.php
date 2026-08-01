@@ -286,6 +286,94 @@
             box-shadow:0 0 0 3px rgba(5,150,105,.11);
         }
 
+
+        .profile-options {
+            display:grid;
+            grid-template-columns:repeat(2,minmax(0,1fr));
+            gap:12px;
+        }
+
+        .profile-option { position:relative; }
+
+        .profile-option input {
+            position:absolute;
+            opacity:0;
+            pointer-events:none;
+        }
+
+        .profile-option label {
+            min-height:112px;
+            margin:0;
+            padding:16px;
+            display:flex;
+            flex-direction:column;
+            justify-content:center;
+            border:1px solid var(--slate-300);
+            border-radius:14px;
+            cursor:pointer;
+            transition:.18s ease;
+        }
+
+        .profile-option label strong {
+            color:var(--slate-950);
+            font-size:14px;
+        }
+
+        .profile-option label span {
+            margin-top:5px;
+            color:var(--slate-500);
+            font-size:11px;
+            line-height:1.45;
+        }
+
+        .profile-option label small {
+            width:max-content;
+            margin-top:9px;
+            padding:4px 8px;
+            border-radius:999px;
+            background:var(--green-100);
+            color:var(--green-900);
+            font-size:9px;
+            font-weight:900;
+            text-transform:uppercase;
+            letter-spacing:.05em;
+        }
+
+        .profile-option input:checked + label {
+            border-color:var(--green-600);
+            background:var(--green-50);
+            box-shadow:0 0 0 3px rgba(5,150,105,.11);
+        }
+
+        .profile-tools {
+            margin-top:10px;
+            display:flex;
+            justify-content:flex-end;
+        }
+
+        .profile-tools a {
+            color:var(--green-700);
+            font-size:11px;
+            font-weight:900;
+            text-decoration:none;
+        }
+
+        .new-profile-panel {
+            grid-column:1 / -1;
+            padding:18px;
+            display:grid;
+            grid-template-columns:repeat(2,minmax(0,1fr));
+            gap:18px;
+            border:1px solid var(--slate-200);
+            border-radius:16px;
+            background:var(--slate-100);
+        }
+
+        .new-profile-panel.hidden { display:none; }
+        .new-profile-panel .field.full { grid-column:1 / -1; }
+        .new-profile-panel input,
+        .new-profile-panel select { background:#fff; }
+
         .password-panel {
             padding:18px;
             border:1px solid #a7f3d0;
@@ -365,6 +453,22 @@
 
         .submit:hover { filter:brightness(.98); }
 
+        .recovery-link {
+            margin-top:16px;
+            text-align:center;
+            color:var(--slate-500);
+            font-size:12px;
+            line-height:1.55;
+        }
+
+        .recovery-link a {
+            color:var(--green-700);
+            font-weight:900;
+            text-decoration:none;
+        }
+
+        .recovery-link a:hover { text-decoration:underline; }
+
         @media (max-width:820px) {
             .page { grid-template-columns:1fr; }
             .intro { position:static; }
@@ -373,7 +477,7 @@
         @media (max-width:570px) {
             .page { margin-top:26px; }
             .intro,.form-card { padding:24px; border-radius:19px; }
-            .grid,.type-options,.password-grid { grid-template-columns:1fr; }
+            .grid,.type-options,.password-grid,.profile-options,.new-profile-panel { grid-template-columns:1fr; }
             .field.full { grid-column:auto; }
         }
     </style>
@@ -457,51 +561,154 @@
             >
                 @csrf
 
+                @php
+                    $defaultProfile = $profiles->firstWhere('is_default', true)
+                        ?? $profiles->first();
+                    $profileChoice = old(
+                        'profile_choice',
+                        $defaultProfile?->public_id ?? 'new'
+                    );
+                    $showNewProfile = $profiles->isEmpty()
+                        || $profileChoice === 'new';
+                @endphp
+
                 <div class="grid">
-                    <div class="field full">
-                        <label for="nama">Nama pasien</label>
-                        <input
-                            id="nama"
-                            type="text"
-                            name="nama"
-                            value="{{ old('nama') }}"
-                            maxlength="100"
-                            autocomplete="name"
-                            placeholder="Masukkan nama lengkap"
-                            required
-                            autofocus
-                        >
-                    </div>
+                    @if ($profiles->isNotEmpty())
+                        <div class="field full">
+                            <label>Konsultasi ini untuk siapa?</label>
+                            <div class="profile-options">
+                                @foreach ($profiles as $profile)
+                                    <div class="profile-option">
+                                        <input
+                                            id="profile_{{ $profile->public_id }}"
+                                            type="radio"
+                                            name="profile_choice"
+                                            value="{{ $profile->public_id }}"
+                                            data-profile-choice="existing"
+                                            @checked($profileChoice === $profile->public_id)
+                                        >
+                                        <label for="profile_{{ $profile->public_id }}">
+                                            <strong>{{ $profile->name }}</strong>
+                                            <span>
+                                                {{ $profile->relationshipLabel() }} ·
+                                                {{ $profile->age }} tahun ·
+                                                {{ $profile->phone }}
+                                            </span>
+                                            @if ($profile->is_default)
+                                                <small>Profil utama</small>
+                                            @endif
+                                        </label>
+                                    </div>
+                                @endforeach
 
-                    <div class="field">
-                        <label for="umur">Umur</label>
-                        <input
-                            id="umur"
-                            type="number"
-                            name="umur"
-                            value="{{ old('umur') }}"
-                            min="1"
-                            max="120"
-                            inputmode="numeric"
-                            placeholder="Contoh: 25"
-                            required
-                        >
-                        <span class="hint">Masukkan umur dalam tahun.</span>
-                    </div>
+                                <div class="profile-option">
+                                    <input
+                                        id="profile_new"
+                                        type="radio"
+                                        name="profile_choice"
+                                        value="new"
+                                        data-profile-choice="new"
+                                        @checked($profileChoice === 'new')
+                                    >
+                                    <label for="profile_new">
+                                        <strong>Tambah profil baru</strong>
+                                        <span>
+                                            Gunakan untuk anak, pasangan,
+                                            orang tua, atau pasien lainnya.
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
 
-                    <div class="field">
-                        <label for="no_hp">Nomor HP</label>
+                            <div class="profile-tools">
+                                <a href="{{ route('consultation.profiles.index') }}">
+                                    Kelola data profil pasien →
+                                </a>
+                            </div>
+                        </div>
+                    @else
                         <input
-                            id="no_hp"
-                            type="tel"
-                            name="no_hp"
-                            value="{{ old('no_hp') }}"
-                            maxlength="25"
-                            autocomplete="tel"
-                            placeholder="Contoh: 081234567890"
-                            required
+                            type="hidden"
+                            name="profile_choice"
+                            value="new"
                         >
-                        <span class="hint">Digunakan sebagai data kontak konsultasi.</span>
+                    @endif
+
+                    <div
+                        id="new-profile-panel"
+                        class="new-profile-panel {{ $showNewProfile ? '' : 'hidden' }}"
+                    >
+                        <div class="field full">
+                            <label for="nama">Nama pasien</label>
+                            <input
+                                id="nama"
+                                type="text"
+                                name="nama"
+                                value="{{ old('nama') }}"
+                                maxlength="100"
+                                autocomplete="name"
+                                placeholder="Masukkan nama lengkap"
+                                data-new-profile-input
+                                @if ($showNewProfile) required @endif
+                                @if ($profiles->isEmpty()) autofocus @endif
+                            >
+                        </div>
+
+                        <div class="field">
+                            <label for="umur">Umur</label>
+                            <input
+                                id="umur"
+                                type="number"
+                                name="umur"
+                                value="{{ old('umur') }}"
+                                min="1"
+                                max="120"
+                                inputmode="numeric"
+                                placeholder="Contoh: 25"
+                                data-new-profile-input
+                                @if ($showNewProfile) required @endif
+                            >
+                            <span class="hint">Masukkan umur dalam tahun.</span>
+                        </div>
+
+                        <div class="field">
+                            <label for="hubungan">Hubungan dengan pasien</label>
+                            <select
+                                id="hubungan"
+                                name="hubungan"
+                                data-new-profile-input
+                                @if ($showNewProfile) required @endif
+                            >
+                                <option value="">Pilih hubungan</option>
+                                @foreach ($relationshipOptions as $value => $label)
+                                    <option
+                                        value="{{ $value }}"
+                                        @selected(old('hubungan', $profiles->isEmpty() ? 'saya' : '') === $value)
+                                    >
+                                        {{ $label }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="field full">
+                            <label for="no_hp">Nomor HP</label>
+                            <input
+                                id="no_hp"
+                                type="tel"
+                                name="no_hp"
+                                value="{{ old('no_hp') }}"
+                                maxlength="25"
+                                autocomplete="tel"
+                                placeholder="Contoh: 081234567890"
+                                data-new-profile-input
+                                @if ($showNewProfile) required @endif
+                            >
+                            <span class="hint">
+                                Nomor yang sama boleh dipakai untuk beberapa
+                                anggota keluarga.
+                            </span>
+                        </div>
                     </div>
 
                     <div class="field full">
@@ -537,14 +744,13 @@
                                 <label for="type_non_resep">
                                     <strong>Non Resep</strong>
                                     <span>
-                                        Pertanyaan umum mengenai obat bebas
-                                        dan kebutuhan farmasi lainnya.
+                                        Permintaan produk atau obat tanpa resep
+                                        yang tetap akan disaring oleh apoteker.
                                     </span>
                                 </label>
                             </div>
                         </div>
                     </div>
-
 
                     @if ($requiresHistoryPassword)
                         <div class="field full password-panel">
@@ -602,8 +808,53 @@
                 <button class="submit" type="submit">
                     Buat Konsultasi dan Lanjut ke Chat
                 </button>
+
+                @if ($requiresHistoryPassword)
+                    <p class="recovery-link">
+                        Sudah pernah berkonsultasi melalui perangkat lain?
+                        <a href="{{ route('consultation.recovery.show') }}">
+                            Pulihkan riwayat
+                        </a>
+                    </p>
+                @endif
             </form>
         </section>
     </main>
+
+    <script>
+        (() => {
+            const panel = document.getElementById('new-profile-panel');
+            const choices = document.querySelectorAll('[data-profile-choice]');
+            const inputs = panel?.querySelectorAll('[data-new-profile-input]') ?? [];
+
+            const syncProfileFields = () => {
+                if (! panel || choices.length === 0) {
+                    return;
+                }
+
+                const selected = document.querySelector('[data-profile-choice]:checked');
+                const show = selected?.value === 'new';
+
+                panel.classList.toggle('hidden', ! show);
+                panel.setAttribute('aria-hidden', show ? 'false' : 'true');
+
+                inputs.forEach((input) => {
+                    input.required = show;
+                    input.disabled = ! show;
+                });
+
+                if (show) {
+                    document.getElementById('nama')?.focus();
+                }
+            };
+
+            choices.forEach((choice) => {
+                choice.addEventListener('change', syncProfileFields);
+            });
+
+            syncProfileFields();
+        })();
+    </script>
+
 </body>
 </html>

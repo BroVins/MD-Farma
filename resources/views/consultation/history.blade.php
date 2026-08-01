@@ -67,6 +67,7 @@
             align-items:center;
             justify-content:space-between;
             gap:18px;
+            flex-wrap:wrap;
         }
 
         nav a { text-decoration:none; }
@@ -249,6 +250,33 @@
             color:#fff;
         }
 
+
+        .profile-filter {
+            display:flex;
+            align-items:center;
+            gap:8px;
+        }
+
+        .profile-filter label {
+            margin:0;
+            color:var(--slate-500);
+            font-size:10px;
+            font-weight:900;
+        }
+
+        .profile-filter select {
+            min-height:36px;
+            padding:0 34px 0 12px;
+            border:1px solid var(--slate-200);
+            border-radius:999px;
+            background:#fff;
+            color:var(--slate-700);
+            font:inherit;
+            font-size:11px;
+            font-weight:800;
+            outline:none;
+        }
+
         .history-list { display:grid; }
 
         .history-item {
@@ -353,6 +381,185 @@
             pointer-events:none;
         }
 
+        .archive-actions {
+            min-width:180px;
+            display:grid;
+            justify-items:end;
+            gap:8px;
+        }
+
+        .request-status {
+            display:inline-flex;
+            align-items:center;
+            padding:6px 9px;
+            border-radius:999px;
+            font-size:10px;
+            font-weight:900;
+            text-align:center;
+        }
+
+        .request-status.pending {
+            color:#92400e;
+            background:#fef3c7;
+        }
+
+        .request-status.verifying {
+            color:#1e40af;
+            background:#dbeafe;
+        }
+
+        .request-status.approved {
+            color:var(--green-900);
+            background:var(--green-100);
+        }
+
+        .request-status.rejected {
+            color:#991b1b;
+            background:#fee2e2;
+        }
+
+        .request-status.completed {
+            color:var(--slate-700);
+            background:var(--slate-100);
+        }
+
+        .archive-request-details {
+            grid-column:1 / -1;
+            width:100%;
+            border:1px solid var(--slate-200);
+            border-radius:15px;
+            background:var(--slate-50);
+        }
+
+        .archive-request-details summary {
+            min-height:43px;
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:12px;
+            padding:0 15px;
+            color:var(--green-800);
+            cursor:pointer;
+            font-size:11px;
+            font-weight:900;
+            list-style:none;
+        }
+
+        .archive-request-details summary::-webkit-details-marker {
+            display:none;
+        }
+
+        .archive-request-details summary::after {
+            content:'+';
+            font-size:18px;
+            line-height:1;
+        }
+
+        .archive-request-details[open] summary::after {
+            content:'−';
+        }
+
+        .archive-request-form {
+            display:grid;
+            grid-template-columns:repeat(2,minmax(0,1fr));
+            gap:13px;
+            padding:16px;
+            border-top:1px solid var(--slate-200);
+            background:#fff;
+            border-radius:0 0 15px 15px;
+        }
+
+        .archive-field.full { grid-column:1 / -1; }
+
+        .archive-field label {
+            display:block;
+            margin-bottom:6px;
+            color:var(--slate-700);
+            font-size:10px;
+            font-weight:900;
+        }
+
+        .archive-field input,
+        .archive-field select,
+        .archive-field textarea {
+            width:100%;
+            border:1px solid var(--slate-300);
+            border-radius:10px;
+            background:#fff;
+            color:var(--slate-950);
+            font:inherit;
+            outline:none;
+        }
+
+        .archive-field input,
+        .archive-field select {
+            min-height:42px;
+            padding:0 11px;
+        }
+
+        .archive-field textarea {
+            min-height:105px;
+            padding:10px 11px;
+            resize:vertical;
+            line-height:1.55;
+        }
+
+        .archive-field input:focus,
+        .archive-field select:focus,
+        .archive-field textarea:focus {
+            border-color:var(--green-600);
+            box-shadow:0 0 0 3px rgba(5,150,105,.12);
+        }
+
+        .archive-confirmation {
+            grid-column:1 / -1;
+            display:flex;
+            align-items:flex-start;
+            gap:9px;
+            color:var(--slate-600);
+            font-size:10px;
+            line-height:1.55;
+        }
+
+        .archive-confirmation input {
+            width:16px;
+            height:16px;
+            margin-top:1px;
+            flex:0 0 auto;
+        }
+
+        .archive-form-note {
+            grid-column:1 / -1;
+            margin:0;
+            padding:11px 12px;
+            border-radius:10px;
+            color:var(--slate-600);
+            background:var(--slate-100);
+            font-size:10px;
+            line-height:1.55;
+        }
+
+        .archive-submit {
+            grid-column:1 / -1;
+            min-height:43px;
+            border:0;
+            border-radius:11px;
+            color:#fff;
+            background:var(--green-700);
+            font:inherit;
+            font-size:11px;
+            font-weight:900;
+            cursor:pointer;
+        }
+
+        .field-error {
+            display:block;
+            margin-top:5px;
+            color:#b91c1c;
+            font-size:10px;
+            font-weight:700;
+        }
+
         .page-alert {
             margin-top:18px;
             padding:14px 16px;
@@ -362,6 +569,23 @@
             background:#fffbeb;
             font-size:12px;
             line-height:1.6;
+        }
+
+        .page-alert.success {
+            border-color:var(--green-200);
+            color:var(--green-900);
+            background:var(--green-50);
+        }
+
+        .page-alert.error {
+            border-color:#fecaca;
+            color:#991b1b;
+            background:#fff5f5;
+        }
+
+        .page-alert ul {
+            margin:7px 0 0;
+            padding-left:18px;
         }
 
         .empty {
@@ -452,6 +676,13 @@
             .summary-card strong { font-size:23px; }
             .history-item { grid-template-columns:1fr; padding:19px 18px; }
             .open-link { width:100%; }
+            .archive-actions { width:100%; justify-items:stretch; }
+            .request-status { justify-content:center; }
+            .archive-request-form { grid-template-columns:1fr; }
+            .archive-field.full,
+            .archive-confirmation,
+            .archive-form-note,
+            .archive-submit { grid-column:1; }
             .pagination { padding:15px 18px; }
         }
 
@@ -512,6 +743,23 @@
             </div>
         @endif
 
+        @if (session('status'))
+            <div class="page-alert success" role="status">
+                {{ session('status') }}
+            </div>
+        @endif
+
+        @if ($errors->any())
+            <div class="page-alert error" role="alert">
+                <strong>Periksa kembali pengajuan salinan arsip:</strong>
+                <ul>
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         <div class="privacy-note">
             Isi pesan dan lampiran konsultasi selesai dapat diakses pasien
             selama <strong>{{ $patientHistoryDays }} hari</strong> sejak
@@ -551,23 +799,51 @@
                 <div class="filters" aria-label="Filter status konsultasi">
                     <a
                         class="filter {{ $selectedStatus === 'semua' ? 'active' : '' }}"
-                        href="{{ route('consultation.history', ['status' => 'semua']) }}"
+                        href="{{ route('consultation.history', ['status' => 'semua', 'profil' => $selectedProfile]) }}"
                     >
                         Semua
                     </a>
                     <a
                         class="filter {{ $selectedStatus === 'aktif' ? 'active' : '' }}"
-                        href="{{ route('consultation.history', ['status' => 'aktif']) }}"
+                        href="{{ route('consultation.history', ['status' => 'aktif', 'profil' => $selectedProfile]) }}"
                     >
                         Aktif
                     </a>
                     <a
                         class="filter {{ $selectedStatus === 'selesai' ? 'active' : '' }}"
-                        href="{{ route('consultation.history', ['status' => 'selesai']) }}"
+                        href="{{ route('consultation.history', ['status' => 'selesai', 'profil' => $selectedProfile]) }}"
                     >
                         Selesai
                     </a>
                 </div>
+
+                @if ($profiles->isNotEmpty())
+                    <form
+                        class="profile-filter"
+                        method="GET"
+                        action="{{ route('consultation.history') }}"
+                    >
+                        <input type="hidden" name="status" value="{{ $selectedStatus }}">
+                        <label for="history-profile">Pasien</label>
+                        <select
+                            id="history-profile"
+                            name="profil"
+                            onchange="this.form.submit()"
+                        >
+                            <option value="semua" @selected($selectedProfile === 'semua')>
+                                Semua profil
+                            </option>
+                            @foreach ($profiles as $profile)
+                                <option
+                                    value="{{ $profile->public_id }}"
+                                    @selected($selectedProfile === $profile->public_id)
+                                >
+                                    {{ $profile->name }} — {{ $profile->relationshipLabel() }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </form>
+                @endif
             </header>
 
             @if ($consultations->isEmpty())
@@ -607,6 +883,22 @@
                             $typeLabel = $consultation->jenis_konsultasi === 'resep'
                                 ? 'Dengan resep'
                                 : 'Tanpa resep';
+                            $archiveRequest = $consultation
+                                ->latestArchiveCopyRequest;
+                            $requestStatusLabel = $archiveRequest
+                                ? match ($archiveRequest->status) {
+                                    'pending' => 'Permintaan dikirim',
+                                    'verifying' => 'Sedang diverifikasi',
+                                    'approved' => 'Permintaan disetujui',
+                                    'rejected' => 'Permintaan ditolak',
+                                    'completed' => 'Permintaan selesai',
+                                    default => $archiveRequest->statusLabel(),
+                                }
+                                : null;
+                            $canRequestCopy = ! $archiveRequest
+                                || ! $archiveRequest->isActiveRequest();
+                            $reopenArchiveForm = old('consultation_public_id')
+                                === $consultation->public_id;
                         @endphp
 
                         <article class="history-item">
@@ -620,6 +912,9 @@
 
                                 <div class="meta">
                                     <span>{{ $typeLabel }}</span>
+                                    @if ($consultation->patientProfile)
+                                        <span>{{ $consultation->patientProfile->relationshipLabel() }}</span>
+                                    @endif
                                     <span>Usia {{ $consultation->umur }} tahun</span>
                                     <span>
                                         Aktivitas
@@ -641,12 +936,142 @@
                             </div>
 
                             @if ($isArchived)
-                                <span
-                                    class="open-link disabled"
-                                    aria-disabled="true"
-                                >
-                                    Arsip internal
-                                </span>
+                                <div class="archive-actions">
+                                    <span
+                                        class="open-link disabled"
+                                        aria-disabled="true"
+                                    >
+                                        Arsip internal
+                                    </span>
+
+                                    @if ($archiveRequest)
+                                        <span class="request-status {{ $archiveRequest->status }}">
+                                            {{ $requestStatusLabel }}
+                                        </span>
+                                    @endif
+                                </div>
+
+                                @if ($canRequestCopy)
+                                    <details
+                                        class="archive-request-details"
+                                        @if ($reopenArchiveForm) open @endif
+                                    >
+                                        <summary>
+                                            {{ $archiveRequest
+                                                ? 'Ajukan salinan kembali'
+                                                : 'Ajukan salinan riwayat' }}
+                                        </summary>
+
+                                        <form
+                                            class="archive-request-form"
+                                            method="POST"
+                                            action="{{ route('consultation.archive-copy.store', $consultation) }}"
+                                        >
+                                            @csrf
+                                            <input
+                                                type="hidden"
+                                                name="consultation_public_id"
+                                                value="{{ $consultation->public_id }}"
+                                            >
+                                            <div class="archive-field full">
+                                                <label for="reason-{{ $consultation->public_id }}">
+                                                    Alasan meminta salinan
+                                                </label>
+                                                <textarea
+                                                    id="reason-{{ $consultation->public_id }}"
+                                                    name="reason"
+                                                    required
+                                                    maxlength="1000"
+                                                    placeholder="Contoh: diperlukan untuk konsultasi lanjutan atau dokumentasi pribadi."
+                                                >{{ $reopenArchiveForm ? old('reason') : '' }}</textarea>
+                                                @if ($reopenArchiveForm)
+                                                    @error('reason')
+                                                        <span class="field-error">{{ $message }}</span>
+                                                    @enderror
+                                                @endif
+                                            </div>
+
+                                            <div class="archive-field">
+                                                <label for="contact-method-{{ $consultation->public_id }}">
+                                                    Metode tindak lanjut
+                                                </label>
+                                                <select
+                                                    id="contact-method-{{ $consultation->public_id }}"
+                                                    name="contact_method"
+                                                    required
+                                                >
+                                                    <option value="whatsapp" @selected($reopenArchiveForm && old('contact_method') === 'whatsapp')>WhatsApp</option>
+                                                    <option value="telepon" @selected($reopenArchiveForm && old('contact_method') === 'telepon')>Telepon</option>
+                                                    <option value="ambil_apotek" @selected($reopenArchiveForm && old('contact_method') === 'ambil_apotek')>Ambil di apotek</option>
+                                                </select>
+                                            </div>
+
+                                            <div class="archive-field">
+                                                <label for="contact-value-{{ $consultation->public_id }}">
+                                                    Nomor kontak
+                                                </label>
+                                                <input
+                                                    id="contact-value-{{ $consultation->public_id }}"
+                                                    name="contact_value"
+                                                    type="tel"
+                                                    value="{{ $reopenArchiveForm ? old('contact_value', $consultation->no_hp) : $consultation->no_hp }}"
+                                                    required
+                                                    maxlength="120"
+                                                    autocomplete="tel"
+                                                >
+                                                @if ($reopenArchiveForm)
+                                                    @error('contact_value')
+                                                        <span class="field-error">{{ $message }}</span>
+                                                    @enderror
+                                                @endif
+                                            </div>
+
+                                            <div class="archive-field full">
+                                                <label for="history-password-{{ $consultation->public_id }}">
+                                                    Password Riwayat
+                                                </label>
+                                                <input
+                                                    id="history-password-{{ $consultation->public_id }}"
+                                                    name="history_password"
+                                                    type="password"
+                                                    required
+                                                    maxlength="128"
+                                                    autocomplete="current-password"
+                                                    placeholder="Masukkan kembali Password Riwayat"
+                                                >
+                                                @if ($reopenArchiveForm)
+                                                    @error('history_password')
+                                                        <span class="field-error">{{ $message }}</span>
+                                                    @enderror
+                                                @endif
+                                            </div>
+
+                                            <label class="archive-confirmation">
+                                                <input
+                                                    type="checkbox"
+                                                    name="privacy_confirmation"
+                                                    value="1"
+                                                    required
+                                                    @checked($reopenArchiveForm && old('privacy_confirmation'))
+                                                >
+                                                <span>
+                                                    Saya memahami bahwa permintaan akan diverifikasi
+                                                    secara manual dan salinan tidak dikirim otomatis.
+                                                </span>
+                                            </label>
+
+                                            <p class="archive-form-note">
+                                                MD Farma dapat meminta verifikasi tambahan sebelum
+                                                menyerahkan arsip untuk mencegah data diberikan kepada
+                                                pihak yang tidak berwenang.
+                                            </p>
+
+                                            <button class="archive-submit" type="submit">
+                                                Kirim permintaan salinan
+                                            </button>
+                                        </form>
+                                    </details>
+                                @endif
                             @else
                                 <a
                                     class="open-link"

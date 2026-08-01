@@ -21,6 +21,8 @@ class PatientAccessCookie
         Request $request,
         ConsultationGuest $guest
     ): HttpCookie {
+        $this->rememberDeviceMetadata($request, $guest);
+
         $token = $this->tokenFromRequest($request);
 
         if (! $this->tokenMatchesGuest($token, $guest)) {
@@ -54,6 +56,8 @@ class PatientAccessCookie
 
                 return null;
             }
+
+            $this->rememberDeviceMetadata($request, $guest);
 
             $token = $this->tokenFromRequest($request);
 
@@ -104,6 +108,7 @@ class PatientAccessCookie
             return null;
         }
 
+        $this->rememberDeviceMetadata($request, $guest);
         Auth::guard('patient')->login($guest);
 
         return $guest;
@@ -117,6 +122,8 @@ class PatientAccessCookie
         if (! $this->isActive($guest)) {
             return;
         }
+
+        $this->rememberDeviceMetadata($request, $guest);
 
         $now = now();
         $writeIntervalHours = max(
@@ -205,6 +212,29 @@ class PatientAccessCookie
         return ! $guest->revoked_at
             && $guest->expires_at
             && $guest->expires_at->isFuture();
+    }
+
+
+    private function rememberDeviceMetadata(
+        Request $request,
+        ConsultationGuest $guest
+    ): void {
+        $changes = [];
+
+        if (! is_string($guest->device_label)
+            || trim($guest->device_label) === '') {
+            $changes['device_label'] = (new PatientDeviceLabel())
+                ->fromRequest($request);
+        }
+
+        if (! $guest->first_seen_at) {
+            $changes['first_seen_at'] = $guest->created_at
+                ?? now();
+        }
+
+        if ($changes !== []) {
+            $guest->forceFill($changes)->save();
+        }
     }
 
     private function findByDeviceToken(

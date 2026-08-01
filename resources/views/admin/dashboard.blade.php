@@ -1136,6 +1136,13 @@
             </a>
 
             <a
+                class="admin-nav-link"
+                href="{{ route('admin.archive-requests.index') }}"
+            >
+                🗂 Permintaan Arsip
+            </a>
+
+            <a
                 class="admin-nav-link active"
                 href="{{ route('admin.dashboard') }}"
             >

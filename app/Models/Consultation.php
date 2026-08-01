@@ -180,6 +180,7 @@ class Consultation extends Model
     ];
 
     protected $fillable = [
+        'patient_profile_id',
         'nama',
         'umur',
         'no_hp',
@@ -601,6 +602,28 @@ class Consultation extends Model
             ),
             'outcome' => $outcome,
         ];
+    }
+
+    public function archiveCopyRequests()
+    {
+        return $this->hasMany(
+            ConsultationArchiveCopyRequest::class
+        )->latest('id');
+    }
+
+    public function latestArchiveCopyRequest()
+    {
+        return $this->hasOne(
+            ConsultationArchiveCopyRequest::class
+        )->latestOfMany('id');
+    }
+
+    public function patientProfile()
+    {
+        return $this->belongsTo(
+            ConsultationPatientProfile::class,
+            'patient_profile_id'
+        );
     }
 
     public function guest()

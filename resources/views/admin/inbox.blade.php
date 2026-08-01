@@ -3310,6 +3310,21 @@
                 </span>
             </a>
 
+            <a class="nav-link" href="{{ route('admin.archive-requests.index') }}">
+                <span>🗂 Permintaan Arsip</span>
+                <span
+                    class="nav-count"
+                    id="topArchiveRequestCount"
+                    style="{{
+                        ($counts['activeArchiveRequests'] ?? 0) > 0
+                            ? ''
+                            : 'display:none'
+                    }}"
+                >
+                    {{ $counts['activeArchiveRequests'] ?? 0 }}
+                </span>
+            </a>
+
             <a class="nav-link" href="{{ route('admin.dashboard') }}">
                 <span>📊 Analitik</span>
             </a>
@@ -3512,6 +3527,7 @@
             const syncTime = document.getElementById('syncTime');
             const notificationToggle = document.getElementById('notificationToggle');
             const topUnreadCount = document.getElementById('topUnreadCount');
+            const topArchiveRequestCount = document.getElementById('topArchiveRequestCount');
             const toastStack = document.getElementById('toastStack');
             const csrfToken = document
                 .querySelector('meta[name="csrf-token"]')
@@ -3707,6 +3723,15 @@
                 topUnreadCount.textContent = counts.unreadMessages;
                 topUnreadCount.style.display =
                     counts.unreadMessages > 0 ? 'grid' : 'none';
+
+                if (topArchiveRequestCount) {
+                    const archiveCount = Number(
+                        counts.activeArchiveRequests ?? 0
+                    );
+                    topArchiveRequestCount.textContent = archiveCount;
+                    topArchiveRequestCount.style.display =
+                        archiveCount > 0 ? 'grid' : 'none';
+                }
             }
 
             function currentFilterParameters() {

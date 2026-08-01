@@ -58,6 +58,16 @@ return [
     ),
 
     /*
+     * Setelah nomor, password, dan tanggal terakhir valid, pasien memiliki
+     * waktu terbatas untuk mengonfirmasi data tersamarkan sebelum perangkat
+     * baru ditautkan ke pemilik riwayat lama.
+     */
+    'recovery_confirmation_minutes' => (int) env(
+        'CONSULTATION_RECOVERY_CONFIRM_MINUTES',
+        10
+    ),
+
+    /*
      * Isi chat konsultasi selesai dapat dibuka pasien selama periode ini.
      * Setelah lewat, data tetap tersimpan untuk arsip internal admin tetapi
      * tidak lagi tersedia melalui dashboard atau endpoint pasien.

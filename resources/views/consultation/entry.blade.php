@@ -242,7 +242,7 @@
 
         .stats {
             display:grid;
-            grid-template-columns:repeat(3,minmax(0,1fr));
+            grid-template-columns:repeat(4,minmax(0,1fr));
             gap:14px;
         }
 
@@ -520,6 +520,7 @@
             line-height:1.55;
         }
 
+        .security-body > .button { width:100%; }
         .lock-form { margin:0; }
         .lock-form .button { width:100%; }
 
@@ -557,7 +558,7 @@
             .page { width:min(94%,1180px); margin-top:20px; }
             .hero { padding:25px 21px; border-radius:22px; }
             .hero-actions { grid-template-columns:1fr; }
-            .stats { grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+            .stats { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
             .stat { padding:15px 12px; border-radius:15px; }
             .stat strong { font-size:23px; }
             .consultation-item {
@@ -662,6 +663,10 @@
                         <span>Sudah selesai</span>
                         <strong>{{ $completedTotal }}</strong>
                     </article>
+                    <article class="stat">
+                        <span>Profil pasien</span>
+                        <strong>{{ $patientProfileTotal }}</strong>
+                    </article>
                 </section>
 
                 <section class="panel" aria-labelledby="active-title">
@@ -705,6 +710,9 @@
                                         </div>
                                         <div class="item-meta">
                                             <span>{{ $typeLabel }}</span>
+                                            @if ($consultation->patientProfile)
+                                                <span>{{ $consultation->patientProfile->relationshipLabel() }}</span>
+                                            @endif
                                             <span>
                                                 Aktivitas {{ $activityAt
                                                     ->timezone(config('analytics.timezone', 'Asia/Jakarta'))
@@ -770,6 +778,9 @@
                                     </div>
                                     <div class="item-meta">
                                         <span>{{ $typeLabel }}</span>
+                                        @if ($consultation->patientProfile)
+                                            <span>{{ $consultation->patientProfile->relationshipLabel() }}</span>
+                                        @endif
                                         <span>
                                             {{ $activityAt
                                                 ->timezone(config('analytics.timezone', 'Asia/Jakarta'))
@@ -851,6 +862,40 @@
                             </span>
                             <span class="quick-arrow" aria-hidden="true">›</span>
                         </a>
+
+                        <a
+                            class="quick-action"
+                            href="{{ route('consultation.profiles.index') }}"
+                        >
+                            <span class="quick-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="9" cy="8" r="3"/>
+                                    <path d="M3.5 19a5.5 5.5 0 0 1 11 0M17 8v6M14 11h6" stroke-linecap="round"/>
+                                </svg>
+                            </span>
+                            <span class="quick-copy">
+                                <strong>Profil pasien</strong>
+                                <span>Kelola {{ $patientProfileTotal }} profil untuk diri sendiri dan keluarga.</span>
+                            </span>
+                            <span class="quick-arrow" aria-hidden="true">›</span>
+                        </a>
+
+                        <a
+                            class="quick-action"
+                            href="{{ route('consultation.devices.index') }}"
+                        >
+                            <span class="quick-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="4" y="3" width="16" height="18" rx="2"/>
+                                    <path d="M9 17h6" stroke-linecap="round"/>
+                                </svg>
+                            </span>
+                            <span class="quick-copy">
+                                <strong>Keamanan perangkat</strong>
+                                <span>Kelola {{ $activeDeviceTotal }} perangkat yang memiliki akses aktif.</span>
+                            </span>
+                            <span class="quick-arrow" aria-hidden="true">›</span>
+                        </a>
                     </div>
                 </section>
 
@@ -895,6 +940,13 @@
                             digunakan bersama orang lain. Cookie perangkat tetap
                             tersimpan, tetapi password akan diminta kembali.
                         </div>
+
+                        <a
+                            class="button ghost"
+                            href="{{ route('consultation.devices.index') }}"
+                        >
+                            Kelola perangkat terhubung
+                        </a>
 
                         <form
                             class="lock-form"

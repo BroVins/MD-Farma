@@ -8,6 +8,7 @@ use App\Models\AnalyticsEvent;
 use App\Models\Consultation;
 use App\Models\ConsultationGuest;
 use App\Models\ConsultationHistoryOwner;
+use App\Models\ConsultationPatientProfile;
 use App\Support\PatientAccessCookie;
 use App\Support\PatientHistoryAccess;
 use Illuminate\Contracts\View\View;
@@ -46,7 +47,7 @@ class ConsultationController extends Controller
         $latestConsultation = ($owner
             ? $owner->consultations()
             : $guest->consultations())
-            ->with('lastMessage')
+            ->with(['lastMessage', 'patientProfile'])
             ->orderByRaw(
                 'COALESCE(consultations.last_message_at, consultations.created_at) DESC'
             )
@@ -75,7 +76,7 @@ class ConsultationController extends Controller
 
         $consultationsQuery = $owner
             ->consultations()
-            ->with('lastMessage')
+            ->with(['lastMessage', 'patientProfile'])
             ->orderByRaw(
                 'COALESCE(consultations.last_message_at, consultations.created_at) DESC'
             )
@@ -99,12 +100,24 @@ class ConsultationController extends Controller
             ->where('consultations.status', 'aktif')
             ->count();
 
+        $activeDeviceTotal = $owner
+            ->devices()
+            ->whereNull('consultation_guests.revoked_at')
+            ->where('consultation_guests.expires_at', '>', now())
+            ->count();
+
+        $patientProfileTotal = $owner
+            ->patientProfiles()
+            ->count();
+
         return view('consultation.entry', [
             'latestConsultation' => $latestConsultation,
             'recentConsultations' => $recentConsultations,
             'activeConsultations' => $activeConsultations,
             'consultationTotal' => $consultationTotal,
             'activeTotal' => $activeTotal,
+            'activeDeviceTotal' => $activeDeviceTotal,
+            'patientProfileTotal' => $patientProfileTotal,
             'completedTotal' => max(
                 0,
                 $consultationTotal - $activeTotal
@@ -177,9 +190,34 @@ class ConsultationController extends Controller
             $status = 'semua';
         }
 
+        $profiles = $owner
+            ->patientProfiles()
+            ->orderByDesc('is_default')
+            ->orderBy('name')
+            ->get();
+
+        $selectedProfile = (string) $request->query(
+            'profil',
+            'semua'
+        );
+
+        if (
+            $selectedProfile !== 'semua'
+            && ! $profiles->contains(
+                'public_id',
+                $selectedProfile
+            )
+        ) {
+            $selectedProfile = 'semua';
+        }
+
         $baseQuery = $owner
             ->consultations()
-            ->with('lastMessage');
+            ->with([
+                'lastMessage',
+                'patientProfile',
+                'latestArchiveCopyRequest',
+            ]);
 
         $consultationTotal = (clone $baseQuery)->count();
         $activeTotal = (clone $baseQuery)
@@ -221,6 +259,16 @@ class ConsultationController extends Controller
 
         $consultations = $baseQuery
             ->when(
+                $selectedProfile !== 'semua',
+                fn ($query) => $query->whereHas(
+                    'patientProfile',
+                    fn ($profileQuery) => $profileQuery->where(
+                        'public_id',
+                        $selectedProfile
+                    )
+                )
+            )
+            ->when(
                 $status !== 'semua',
                 fn ($query) => $query->where(
                     'consultations.status',
@@ -237,6 +285,8 @@ class ConsultationController extends Controller
         return view('consultation.history', [
             'consultations' => $consultations,
             'selectedStatus' => $status,
+            'selectedProfile' => $selectedProfile,
+            'profiles' => $profiles,
             'consultationTotal' => $consultationTotal,
             'activeTotal' => $activeTotal,
             'completedTotal' => $completedTotal,
@@ -288,9 +338,21 @@ class ConsultationController extends Controller
             ]
         );
 
+        $profiles = $guest?->historyOwner
+            ? $guest->historyOwner
+                ->patientProfiles()
+                ->orderByDesc('is_default')
+                ->orderByDesc('last_used_at')
+                ->orderBy('name')
+                ->get()
+            : collect();
+
         return view('consultation.form', [
             'requiresHistoryPassword' =>
                 ! $guest?->historyOwner,
+            'profiles' => $profiles,
+            'relationshipOptions' =>
+                ConsultationPatientProfile::relationshipOptions(),
         ]);
     }
 
@@ -331,9 +393,16 @@ class ConsultationController extends Controller
                     ->findOrFail($guest->id);
 
                 if ($lockedGuest->history_owner_id) {
-                    return $lockedGuest
+                    $existingOwner = $lockedGuest
                         ->historyOwner()
                         ->firstOrFail();
+
+                    $this->attachLegacyConsultationsToProfiles(
+                        $lockedGuest,
+                        $existingOwner
+                    );
+
+                    return $existingOwner;
                 }
 
                 $owner = ConsultationHistoryOwner::create([
@@ -347,6 +416,11 @@ class ConsultationController extends Controller
                     $owner
                 );
                 $lockedGuest->save();
+
+                $this->attachLegacyConsultationsToProfiles(
+                    $lockedGuest,
+                    $owner
+                );
 
                 return $owner;
             }
@@ -431,29 +505,38 @@ class ConsultationController extends Controller
                 ]);
         }
 
+        $hasProfiles = $owner
+            ? $owner->patientProfiles()->exists()
+            : false;
+        $profileChoice = (string) $request->input(
+            'profile_choice',
+            'new'
+        );
+        $createsNewProfile = ! $owner
+            || ! $hasProfiles
+            || $profileChoice === 'new';
+
         $rules = [
-            'nama' => [
-                'required',
-                'string',
-                'max:100',
-            ],
-            'umur' => [
-                'required',
-                'integer',
-                'min:1',
-                'max:120',
-            ],
-            'no_hp' => [
-                'required',
-                'string',
-                'max:25',
-                'regex:/^[0-9+\-\s()]+$/',
-            ],
             'jenis_konsultasi' => [
                 'required',
                 'in:resep,non_resep',
             ],
         ];
+
+        if ($owner && $hasProfiles) {
+            $rules['profile_choice'] = [
+                'required',
+                'string',
+                'max:40',
+            ];
+        }
+
+        if ($createsNewProfile) {
+            $rules = array_merge(
+                $rules,
+                $this->patientProfileRules()
+            );
+        }
 
         if ($requiresHistoryPassword) {
             $rules['password_riwayat'] =
@@ -462,8 +545,23 @@ class ConsultationController extends Controller
 
         $validated = $request->validate(
             $rules,
-            $this->passwordMessages()
+            array_merge(
+                $this->passwordMessages(),
+                $this->patientProfileMessages()
+            )
         );
+
+        if (
+            $owner
+            && $hasProfiles
+            && ! $createsNewProfile
+            && ! Str::isUuid($profileChoice)
+        ) {
+            throw ValidationException::withMessages([
+                'profile_choice' =>
+                    'Profil pasien yang dipilih tidak valid.',
+            ]);
+        }
 
         [$consultation, $owner] = DB::transaction(
             function () use (
@@ -471,7 +569,9 @@ class ConsultationController extends Controller
                 $validated,
                 $guest,
                 $owner,
-                $accessCookie
+                $accessCookie,
+                $createsNewProfile,
+                $profileChoice
             ): array {
                 $activeGuest = $guest;
 
@@ -517,10 +617,47 @@ class ConsultationController extends Controller
                     $activeGuest->save();
                 }
 
+                if ($createsNewProfile) {
+                    $hasExistingProfiles = $activeOwner
+                        ->patientProfiles()
+                        ->lockForUpdate()
+                        ->first() !== null;
+
+                    $profile = $activeOwner
+                        ->patientProfiles()
+                        ->create([
+                            'name' => $validated['nama'],
+                            'age' => $validated['umur'],
+                            'phone' => $validated['no_hp'],
+                            'relationship' =>
+                                $validated['hubungan'],
+                            'is_default' => ! $hasExistingProfiles,
+                            'last_used_at' => now(),
+                        ]);
+                } else {
+                    $profile = $activeOwner
+                        ->patientProfiles()
+                        ->where('public_id', $profileChoice)
+                        ->lockForUpdate()
+                        ->first();
+
+                    if (! $profile) {
+                        throw ValidationException::withMessages([
+                            'profile_choice' =>
+                                'Profil pasien tidak ditemukan pada riwayat Anda.',
+                        ]);
+                    }
+
+                    $profile->forceFill([
+                        'last_used_at' => now(),
+                    ])->save();
+                }
+
                 $consultation = new Consultation([
-                    'nama' => $validated['nama'],
-                    'umur' => $validated['umur'],
-                    'no_hp' => $validated['no_hp'],
+                    'patient_profile_id' => $profile->id,
+                    'nama' => $profile->name,
+                    'umur' => $profile->age,
+                    'no_hp' => $profile->phone,
                     'jenis_konsultasi' =>
                         $validated['jenis_konsultasi'],
                     'status' => 'aktif',
@@ -529,7 +666,9 @@ class ConsultationController extends Controller
                 $consultation->guest()->associate(
                     $activeGuest
                 );
-
+                $consultation->patientProfile()->associate(
+                    $profile
+                );
                 $consultation->save();
 
                 AnalyticsEvent::recordOnce(
@@ -538,8 +677,9 @@ class ConsultationController extends Controller
                     $consultation,
                     [
                         'type' =>
-                            $consultation
-                                ->jenis_konsultasi,
+                            $consultation->jenis_konsultasi,
+                        'patient_relationship' =>
+                            $profile->relationship,
                     ],
                     'consultation:'
                         .$consultation->id
@@ -555,6 +695,7 @@ class ConsultationController extends Controller
         try {
             $freshConsultation = $consultation->fresh([
                 'lastMessage',
+                'patientProfile',
             ]);
 
             event(
@@ -593,6 +734,111 @@ class ConsultationController extends Controller
                     $consultation->guest
                 )
             );
+    }
+
+    private function attachLegacyConsultationsToProfiles(
+        ConsultationGuest $guest,
+        ConsultationHistoryOwner $owner
+    ): void {
+        $consultations = $guest
+            ->consultations()
+            ->whereNull('patient_profile_id')
+            ->orderBy('id')
+            ->get();
+
+        foreach ($consultations as $consultation) {
+            $profile = $owner
+                ->patientProfiles()
+                ->where('name', $consultation->nama)
+                ->where('age', $consultation->umur)
+                ->where('phone', $consultation->no_hp)
+                ->first();
+
+            if (! $profile) {
+                $profile = $owner
+                    ->patientProfiles()
+                    ->create([
+                        'name' => $consultation->nama,
+                        'age' => $consultation->umur,
+                        'phone' => $consultation->no_hp,
+                        'relationship' => 'lainnya',
+                        'last_used_at' =>
+                            $consultation->last_message_at
+                            ?? $consultation->created_at,
+                    ]);
+            }
+
+            $consultation->patientProfile()->associate(
+                $profile
+            );
+            $consultation->saveQuietly();
+        }
+
+        if (! $owner->patientProfiles()->where('is_default', true)->exists()) {
+            $defaultProfile = $owner
+                ->patientProfiles()
+                ->orderByDesc('last_used_at')
+                ->orderByDesc('id')
+                ->first();
+
+            if ($defaultProfile) {
+                $defaultProfile->update([
+                    'is_default' => true,
+                    'relationship' => 'saya',
+                ]);
+            }
+        }
+    }
+
+    private function patientProfileRules(): array
+    {
+        return [
+            'nama' => [
+                'required',
+                'string',
+                'max:100',
+            ],
+            'umur' => [
+                'required',
+                'integer',
+                'min:1',
+                'max:120',
+            ],
+            'no_hp' => [
+                'required',
+                'string',
+                'max:25',
+                'regex:/^[0-9+\-\s()]+$/',
+            ],
+            'hubungan' => [
+                'required',
+                'in:'.implode(
+                    ',',
+                    array_keys(
+                        ConsultationPatientProfile::relationshipOptions()
+                    )
+                ),
+            ],
+        ];
+    }
+
+    private function patientProfileMessages(): array
+    {
+        return [
+            'profile_choice.required' =>
+                'Pilih pasien yang akan dikonsultasikan.',
+            'nama.required' => 'Nama pasien wajib diisi.',
+            'umur.required' => 'Umur pasien wajib diisi.',
+            'umur.integer' => 'Umur pasien harus berupa angka.',
+            'umur.min' => 'Umur pasien minimal 1 tahun.',
+            'umur.max' => 'Umur pasien maksimal 120 tahun.',
+            'no_hp.required' => 'Nomor HP wajib diisi.',
+            'no_hp.regex' => 'Format nomor HP tidak sesuai.',
+            'hubungan.required' =>
+                'Hubungan dengan pasien wajib dipilih.',
+            'hubungan.in' =>
+                'Pilihan hubungan dengan pasien tidak valid.',
+        ];
     }
 
     private function passwordRules(bool $confirmed): array

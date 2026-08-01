@@ -355,8 +355,9 @@
 
                 <div class="privacy">
                     <strong>Password tidak dapat dilihat oleh admin</strong>
-                    Password disimpan dalam bentuk hash. Pada tahap ini,
-                    pemulihan ketika cookie hilang atau perangkat diganti belum tersedia.
+                    Password disimpan dalam bentuk hash. Jika perangkat diganti
+                    atau cookie hilang, akses dapat dipulihkan melalui nomor kontak,
+                    Password Riwayat, dan tanggal konsultasi terakhir.
                 </div>
             </div>
         </section>
