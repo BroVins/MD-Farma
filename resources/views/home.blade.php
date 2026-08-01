@@ -1497,34 +1497,17 @@
                                 stroke-linejoin="round"
                             >
                                 <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/>
+                                <path d="M14 7h4M16 5v4"/>
                             </svg>
                         </span>
-                        <h3>Konsultasi obat</h3>
+                        <h3>Konsultasi obat dan resep</h3>
                         <p>
-                            Tanyakan aturan pakai, efek samping, interaksi,
-                            atau informasi umum terkait obat kepada apoteker.
+                            Tanyakan penggunaan obat atau kirim gambar resep
+                            melalui ruang chat privat bersama apoteker MD Farma.
                         </p>
-                    </article>
-
-                    <article class="service-card">
-                        <span class="service-icon" aria-hidden="true">
-                            <svg
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                            >
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                                <path d="M14 2v6h6M8 13h8M8 17h6"/>
-                            </svg>
-                        </span>
-                        <h3>Konsultasi resep</h3>
-                        <p>
-                            Kirim gambar atau dokumen resep melalui fitur
-                            lampiran agar informasi dapat diperiksa dengan
-                            lebih terarah.
-                        </p>
+                        <a class="service-action" href="{{ route('consultation.entry') }}">
+                            Mulai konsultasi
+                        </a>
                     </article>
 
                     <article class="service-card">
@@ -1541,11 +1524,38 @@
                                 <path d="M9 11h6"/>
                             </svg>
                         </span>
-                        <h3>Pembelian melalui marketplace</h3>
+                        <h3>Belanja produk resmi</h3>
                         <p>
-                            Kunjungi toko resmi MD Farma di Tokopedia, Shopee,
-                            GoApotik, atau Blibli melalui tautan yang tersedia.
+                            Pilih marketplace resmi MD Farma untuk melihat
+                            produk, ketersediaan, dan proses pembelian.
                         </p>
+                        <a class="service-action" href="#marketplace">
+                            Lihat marketplace
+                        </a>
+                    </article>
+
+                    <article class="service-card">
+                        <span class="service-icon" aria-hidden="true">
+                            <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                                <circle cx="9" cy="7" r="4"/>
+                                <path d="M19 8v6M16 11h6"/>
+                            </svg>
+                        </span>
+                        <h3>Kerja sama bisnis</h3>
+                        <p>
+                            Ajukan kolaborasi pengadaan, distribusi, komunitas,
+                            atau bentuk kerja sama lain bersama MD Farma.
+                        </p>
+                        <a class="service-action" href="{{ route('partnership') }}">
+                            Buka halaman kerja sama
+                        </a>
                     </article>
                 </div>
             </div>

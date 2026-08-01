@@ -3398,7 +3398,7 @@
             </a>
 
             <a class="nav-link" href="{{ route('admin.archive-requests.index') }}">
-                <span>🗂 Permintaan Arsip</span>
+                <span>🗂 Arsip</span>
                 <span
                     class="nav-count"
                     id="topArchiveRequestCount"
@@ -3413,7 +3413,7 @@
             </a>
 
             <a class="nav-link" href="{{ route('admin.dashboard') }}">
-                <span>📊 Analitik</span>
+                <span>📊 Dashboard</span>
             </a>
         </nav>
 
@@ -3434,7 +3434,7 @@
 
             <div class="admin-identity">
                 <strong>{{ auth('admin')->user()->username }}</strong>
-                <small>Administrator</small>
+                <small>Apoteker</small>
             </div>
 
             <form action="{{ route('admin.logout') }}" method="POST">

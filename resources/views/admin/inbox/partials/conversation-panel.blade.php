@@ -207,6 +207,24 @@
             </small>
         </div>
 
+        <details
+            class="workflow-console"
+            data-workflow-console
+            @if (! $consultation->service_classification) open @endif
+        >
+            <summary>
+                <span class="workflow-console-title">
+                    <strong>Kelola alur pelayanan</strong>
+                    <small>
+                        Klasifikasi, skrining, hasil akhir, dan catatan audit.
+                    </small>
+                </span>
+                <span class="workflow-console-progress">
+                    {{ $isReadOnly ? 'Hanya-baca' : 'Buka panel' }}
+                </span>
+            </summary>
+
+            <div class="workflow-console-body">
         @if (! $isReadOnly)
         <form
             class="classification-form"
@@ -378,6 +396,8 @@
             'admin.inbox.partials.status-history',
             compact('consultation', 'timezone')
         )
+            </div>
+        </details>
     </section>
 
     <div
