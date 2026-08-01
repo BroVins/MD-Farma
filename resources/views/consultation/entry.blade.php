@@ -10,15 +10,15 @@
 
     <style>
         :root {
-            --green-950:#052e2b;
-            --green-900:#064e3b;
-            --green-800:#065f46;
-            --green-700:#047857;
-            --green-600:#059669;
-            --green-500:#10b981;
-            --green-200:#a7f3d0;
-            --green-100:#d1fae5;
-            --green-50:#ecfdf5;
+            --green-950:#1f2937;
+            --green-900:#172554;
+            --green-800:#1e3a8a;
+            --green-700:#1238cc;
+            --green-600:#2a55df;
+            --green-500:#3b82f6;
+            --green-200:#bfdbfe;
+            --green-100:#dbeafe;
+            --green-50:#eff6ff;
             --amber-700:#b45309;
             --amber-100:#fef3c7;
             --amber-50:#fffbeb;
@@ -46,7 +46,7 @@
                 BlinkMacSystemFont,"Segoe UI",sans-serif;
             color:var(--slate-950);
             background:
-                radial-gradient(circle at 91% 2%,rgba(16,185,129,.14),transparent 26%),
+                radial-gradient(circle at 91% 2%,rgba(59, 130, 246, .14),transparent 26%),
                 linear-gradient(180deg,#f8fafc 0%,#f4f8f6 100%);
         }
 
@@ -91,7 +91,7 @@
             background:var(--green-700);
             color:#fff;
             font-size:21px;
-            box-shadow:0 8px 20px rgba(4,120,87,.2);
+            box-shadow:0 8px 20px rgba(18, 56, 204, .2);
         }
 
         .back {
@@ -117,9 +117,9 @@
             color:#fff;
             background:
                 radial-gradient(circle at 95% 8%,rgba(255,255,255,.15),transparent 30%),
-                radial-gradient(circle at 70% 120%,rgba(16,185,129,.3),transparent 37%),
+                radial-gradient(circle at 70% 120%,rgba(59, 130, 246, .3),transparent 37%),
                 linear-gradient(145deg,var(--green-800),var(--green-950));
-            box-shadow:0 25px 70px rgba(6,78,59,.2);
+            box-shadow:0 25px 70px rgba(23, 37, 84, .2);
         }
 
         .hero::after {
@@ -156,7 +156,7 @@
         .hero-copy > p:last-child {
             max-width:640px;
             margin:16px 0 0;
-            color:#d1fae5;
+            color:#dbeafe;
             font-size:14px;
             line-height:1.7;
         }
@@ -585,12 +585,14 @@
             .stat strong { margin:0; }
         }
     </style>
+    <link rel="icon" type="image/jpeg" href="{{ asset('images/md-farma-logo.jpeg') }}">
+    <link rel="stylesheet" href="{{ asset('css/md-farma-logo-theme.css') }}">
 </head>
 <body>
     <header class="topbar">
         <nav>
             <a class="brand" href="{{ route('home') }}">
-                <span class="brand-mark">+</span>
+                <span class="brand-mark" aria-hidden="true"><img src="{{ asset('images/md-farma-logo.jpeg') }}" alt="" width="52" height="52"></span>
                 <span>MD Farma</span>
             </a>
             <a class="back" href="{{ route('home') }}">

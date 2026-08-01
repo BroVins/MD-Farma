@@ -7,15 +7,15 @@
 
     :root {
         --mdf-surface: #ffffff;
-        --mdf-canvas: #f7faf9;
+        --mdf-canvas: #f8f9fc;
         --mdf-canvas-soft: #f1f7f4;
         --mdf-border: #dde8e3;
         --mdf-text: #172033;
         --mdf-muted: #64748b;
-        --mdf-green: #047857;
-        --mdf-green-dark: #065f46;
+        --mdf-green: #1238cc;
+        --mdf-green-dark: #1e3a8a;
         --mdf-green-soft: #e9f8f1;
-        --mdf-green-bubble: #dcf7e9;
+        --mdf-green-bubble: #e3edff;
         --mdf-danger: #b42318;
         --mdf-danger-soft: #fff1f0;
         --mdf-shadow-soft: 0 8px 24px rgba(15, 23, 42, .065);
@@ -74,7 +74,7 @@
     }
 
     .conversation-item:hover {
-        background: #f7faf9;
+        background: #f8f9fc;
     }
 
     /* Main canvas: less green, more neutral and comfortable for long sessions. */
@@ -99,7 +99,7 @@
     .conversation-avatar.large {
         width: 44px;
         height: 44px;
-        box-shadow: 0 7px 18px rgba(5, 150, 105, .16);
+        box-shadow: 0 7px 18px rgba(42, 85, 223, .16);
     }
 
     .conversation-heading {
@@ -177,7 +177,7 @@
             linear-gradient(rgba(248, 251, 250, .965), rgba(248, 251, 250, .965)),
             radial-gradient(
                 circle at 16px 16px,
-                rgba(5, 150, 105, .055) 1px,
+                rgba(42, 85, 223, .055) 1px,
                 transparent 1.2px
             );
         background-size: auto, 34px 34px;
@@ -278,7 +278,7 @@
         gap: 11px;
         margin-top: 8px;
         padding: 11px 12px;
-        border: 1px solid rgba(5, 150, 105, .17);
+        border: 1px solid rgba(42, 85, 223, .17);
         border-radius: 13px;
         color: inherit;
         background: rgba(255, 255, 255, .76);
@@ -286,7 +286,7 @@
     }
 
     .document-attachment:hover {
-        border-color: rgba(5, 150, 105, .35);
+        border-color: rgba(42, 85, 223, .35);
         background: rgba(255, 255, 255, .94);
     }
 
@@ -352,8 +352,8 @@
     }
 
     .image-picker:hover {
-        border-color: #a8d7c1;
-        background: #eef9f3;
+        border-color: #b8c5e6;
+        background: #f2f6ff;
     }
 
     .reply-form textarea {
@@ -367,8 +367,8 @@
     }
 
     .reply-form textarea:focus {
-        border-color: #6ac49c;
-        box-shadow: 0 0 0 3px rgba(5, 150, 105, .11);
+        border-color: #6f8ee8;
+        box-shadow: 0 0 0 3px rgba(42, 85, 223, .11);
     }
 
     .send-reply {
@@ -379,13 +379,13 @@
         justify-content: center;
         gap: 7px;
         border-radius: 12px;
-        background: linear-gradient(135deg, #07845e, #059669);
-        box-shadow: 0 7px 17px rgba(5, 150, 105, .2);
+        background: linear-gradient(135deg, #1f4ed8, #2a55df);
+        box-shadow: 0 7px 17px rgba(42, 85, 223, .2);
         font-size: 11px;
     }
 
     .send-reply:hover {
-        background: linear-gradient(135deg, #066f51, #047857);
+        background: linear-gradient(135deg, #1735a6, #1238cc);
     }
 
     /* The legacy finish action under the composer is intentionally hidden. */

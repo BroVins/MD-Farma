@@ -9,6 +9,7 @@ use App\Models\AdminConsultationRead;
 use App\Models\Consultation;
 use App\Models\ConsultationArchiveCopyRequest;
 use App\Models\Message;
+use App\Support\ConsultationAudit;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
@@ -35,6 +36,11 @@ class AdminInboxController extends Controller
         Consultation $consultation
     ): View {
         $this->markConsultationRead($consultation);
+        app(ConsultationAudit::class)->recordAccess(
+            $request,
+            'chat_viewed',
+            $consultation
+        );
 
         return $this->renderInbox(
             $request,
@@ -47,6 +53,11 @@ class AdminInboxController extends Controller
         Consultation $consultation
     ): JsonResponse {
         $this->markConsultationRead($consultation);
+        app(ConsultationAudit::class)->recordAccess(
+            $request,
+            'chat_viewed',
+            $consultation
+        );
 
         $consultation->load([
             'messages' => fn ($query) =>
@@ -56,6 +67,7 @@ class AdminInboxController extends Controller
             'classificationLogs.notice',
             'classificationScreenings.admin',
             'consultationOutcomes.admin',
+            'statusLogs.admin',
         ]);
 
         $timezone = config(
@@ -138,6 +150,7 @@ class AdminInboxController extends Controller
         Request $request,
         Consultation $consultation
     ): JsonResponse|\Illuminate\Http\RedirectResponse {
+        $this->ensureConsultationIsEditable($consultation);
         $validated = $request->validate([
             'service_classification' => [
                 'required',
@@ -173,6 +186,10 @@ class AdminInboxController extends Controller
                     ->lockForUpdate()
                     ->findOrFail($consultation->getKey());
 
+                $this->ensureConsultationIsEditable(
+                    $lockedConsultation
+                );
+
                 $previousClassification =
                     $lockedConsultation->service_classification;
 
@@ -200,6 +217,7 @@ class AdminInboxController extends Controller
                         'classificationLogs.notice',
                         'classificationScreenings.admin',
                         'consultationOutcomes.admin',
+                        'statusLogs.admin',
                     ]);
 
                     return [
@@ -301,6 +319,7 @@ class AdminInboxController extends Controller
                     'classificationLogs.notice',
                     'classificationScreenings.admin',
                     'consultationOutcomes.admin',
+                    'statusLogs.admin',
                 ]);
 
                 return [
@@ -414,6 +433,7 @@ class AdminInboxController extends Controller
         Request $request,
         Consultation $consultation
     ): JsonResponse|\Illuminate\Http\RedirectResponse {
+        $this->ensureConsultationIsEditable($consultation);
         $validated = $request->validate([
             'answers' => ['nullable', 'array'],
             'answers.*' => ['nullable'],
@@ -431,6 +451,10 @@ class AdminInboxController extends Controller
                 $lockedConsultation = Consultation::query()
                     ->lockForUpdate()
                     ->findOrFail($consultation->getKey());
+
+                $this->ensureConsultationIsEditable(
+                    $lockedConsultation
+                );
 
                 $classification =
                     $lockedConsultation->service_classification;
@@ -509,6 +533,7 @@ class AdminInboxController extends Controller
                     'classificationLogs.notice',
                     'classificationScreenings.admin',
                     'consultationOutcomes.admin',
+                    'statusLogs.admin',
                 ]);
 
                 return $lockedConsultation;
@@ -576,6 +601,7 @@ class AdminInboxController extends Controller
         Request $request,
         Consultation $consultation
     ): JsonResponse|\Illuminate\Http\RedirectResponse {
+        $this->ensureConsultationIsEditable($consultation);
         $validated = $request->validate([
             'outcome_code' => [
                 'required',
@@ -600,6 +626,10 @@ class AdminInboxController extends Controller
                 $lockedConsultation = Consultation::query()
                     ->lockForUpdate()
                     ->findOrFail($consultation->getKey());
+
+                $this->ensureConsultationIsEditable(
+                    $lockedConsultation
+                );
 
                 $classification =
                     $lockedConsultation->service_classification;
@@ -702,6 +732,7 @@ class AdminInboxController extends Controller
                         'classificationLogs.notice',
                         'classificationScreenings.admin',
                         'consultationOutcomes.admin',
+                        'statusLogs.admin',
                     ]);
 
                     return [
@@ -729,6 +760,7 @@ class AdminInboxController extends Controller
                     'classificationLogs.notice',
                     'classificationScreenings.admin',
                     'consultationOutcomes.admin',
+                    'statusLogs.admin',
                 ]);
 
                 return [
@@ -841,6 +873,19 @@ class AdminInboxController extends Controller
         return [$payload, $broadcasted];
     }
 
+    private function ensureConsultationIsEditable(
+        Consultation $consultation
+    ): void {
+        if ($consultation->status === 'aktif') {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'consultation' =>
+                'Konsultasi yang sudah selesai bersifat hanya-baca. Aktifkan kembali konsultasi dan isi alasan sebelum mengubah data pelayanan.',
+        ]);
+    }
+
     private function renderInbox(
         Request $request,
         ?Consultation $selected = null
@@ -861,6 +906,7 @@ class AdminInboxController extends Controller
                 'classificationLogs.notice',
                 'classificationScreenings.admin',
                 'consultationOutcomes.admin',
+                'statusLogs.admin',
             ]);
 
             $state = $this->resolveInboxState(

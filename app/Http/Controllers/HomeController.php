@@ -16,6 +16,16 @@ class HomeController extends Controller
         return view('profile');
     }
 
+    public function privacy(): View
+    {
+        return view('privacy', [
+            'policyVersion' => (string) config(
+                'mdfarma.privacy_policy_version',
+                '2026-08-01'
+            ),
+        ]);
+    }
+
     public function partnership(): View
     {
         $number = preg_replace(

@@ -115,21 +115,28 @@ class ConsultationPatientProfileController extends Controller
             $profile,
             $validated
         ): void {
-            if ((bool) ($validated['is_default'] ?? false)) {
+            $requestedDefault = (bool) (
+                $validated['is_default'] ?? false
+            );
+
+            if ($requestedDefault) {
                 $owner->patientProfiles()
                     ->where('id', '!=', $profile->id)
                     ->update(['is_default' => false]);
             }
+
+            $otherDefaultExists = $owner->patientProfiles()
+                ->where('id', '!=', $profile->id)
+                ->where('is_default', true)
+                ->exists();
 
             $profile->update([
                 'name' => $validated['name'],
                 'age' => $validated['age'],
                 'phone' => $validated['phone'],
                 'relationship' => $validated['relationship'],
-                'is_default' => (bool) (
-                    $validated['is_default']
-                    ?? $profile->is_default
-                ),
+                'is_default' => $requestedDefault
+                    || ($profile->is_default && ! $otherDefaultExists),
             ]);
         });
 

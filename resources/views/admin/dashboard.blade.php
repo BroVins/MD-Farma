@@ -17,14 +17,14 @@
 
     <style>
         :root {
-            --green-900:#064e3b;
-            --green-800:#065f46;
-            --green-700:#047857;
-            --green-600:#059669;
-            --green-500:#10b981;
-            --green-200:#a7f3d0;
-            --green-100:#d1fae5;
-            --green-50:#ecfdf5;
+            --green-900:#172554;
+            --green-800:#1e3a8a;
+            --green-700:#1238cc;
+            --green-600:#2a55df;
+            --green-500:#3b82f6;
+            --green-200:#bfdbfe;
+            --green-100:#dbeafe;
+            --green-50:#eff6ff;
             --amber-100:#fef3c7;
             --amber-800:#92400e;
             --red-100:#fee2e2;
@@ -64,9 +64,9 @@
             justify-content:space-between;
             gap:16px;
             padding:13px clamp(18px,4vw,56px);
-            background:rgba(6,78,59,.97);
+            background:rgba(23, 37, 84, .97);
             color:#fff;
-            box-shadow:0 8px 24px rgba(6,78,59,.16);
+            box-shadow:0 8px 24px rgba(23, 37, 84, .16);
             backdrop-filter:blur(12px);
         }
 
@@ -148,7 +148,7 @@
         }
 
         .live-pill.connected .live-dot {
-            background:#4ade80;
+            background:#93c5fd;
         }
 
         .live-pill.disconnected .live-dot {
@@ -760,9 +760,9 @@
             font-weight:850;
         }
 
-        .calendar-day.i1 { background:#ecfdf5; }
-        .calendar-day.i2 { background:#a7f3d0; }
-        .calendar-day.i3 { background:#34d399; }
+        .calendar-day.i1 { background:#eff6ff; }
+        .calendar-day.i2 { background:#bfdbfe; }
+        .calendar-day.i3 { background:#60a5fa; }
         .calendar-day.i4 {
             border-color:var(--green-700);
             background:var(--green-700);
@@ -795,9 +795,9 @@
             background:var(--slate-100);
         }
 
-        .h1 { background:#ecfdf5; }
-        .h2 { background:#a7f3d0; }
-        .h3 { background:#34d399; }
+        .h1 { background:#eff6ff; }
+        .h2 { background:#bfdbfe; }
+        .h3 { background:#60a5fa; }
         .h4 { background:var(--green-700); }
 
         .table-panel { overflow:hidden; }
@@ -1119,11 +1119,13 @@
             }
         }
     </style>
+    <link rel="icon" type="image/jpeg" href="{{ asset('images/md-farma-logo.jpeg') }}">
+    <link rel="stylesheet" href="{{ asset('css/md-farma-logo-theme.css') }}">
 </head>
 <body>
     <header class="topbar">
         <a class="brand" href="{{ route('admin.inbox') }}">
-            <span class="brand-mark">✚</span>
+            <span class="brand-mark" aria-hidden="true"><img src="{{ asset('images/md-farma-logo.jpeg') }}" alt="" width="52" height="52"></span>
             <span>MD Farma Admin</span>
         </a>
 
@@ -2073,12 +2075,12 @@
 
                 gradient.addColorStop(
                     0,
-                    'rgba(5,150,105,.27)'
+                    'rgba(42, 85, 223, .27)'
                 );
 
                 gradient.addColorStop(
                     1,
-                    'rgba(5,150,105,0)'
+                    'rgba(42, 85, 223, 0)'
                 );
 
                 ctx.beginPath();
@@ -2121,7 +2123,7 @@
                     }
                 );
 
-                ctx.strokeStyle = '#047857';
+                ctx.strokeStyle = '#1238cc';
                 ctx.lineWidth = 3;
                 ctx.lineJoin = 'round';
                 ctx.stroke();
@@ -2137,7 +2139,7 @@
                     );
                     ctx.fillStyle = '#fff';
                     ctx.fill();
-                    ctx.strokeStyle = '#047857';
+                    ctx.strokeStyle = '#1238cc';
                     ctx.lineWidth = 2;
                     ctx.stroke();
                 });

@@ -16,6 +16,17 @@ class Admin extends Authenticatable
         'remember_token',
     ];
 
+
+    public function consultationStatusLogs()
+    {
+        return $this->hasMany(ConsultationStatusLog::class);
+    }
+
+    public function consultationAccessLogs()
+    {
+        return $this->hasMany(ConsultationAccessLog::class);
+    }
+
     public function consultationReads()
     {
         return $this->hasMany(

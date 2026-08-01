@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Support\PatientAccessCookie;
 use App\Support\PatientHistoryAccess;
+use App\Support\PatientConsultationAccess;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -12,7 +13,8 @@ class EnsurePatientConsultationAccess
 {
     public function __construct(
         private readonly PatientAccessCookie $accessCookie,
-        private readonly PatientHistoryAccess $historyAccess
+        private readonly PatientHistoryAccess $historyAccess,
+        private readonly PatientConsultationAccess $consultationAccess
     ) {
     }
 
@@ -23,27 +25,12 @@ class EnsurePatientConsultationAccess
         $consultation = $request->route('consultation');
         $guest = $this->accessCookie->restore($request);
 
-        if ($guest) {
-            $consultation->loadMissing(
-                'guest:id,history_owner_id'
-            );
-        }
-
-        $sameDevice = $guest
-            && (int) $consultation->guest_id
-                === (int) $guest->getAuthIdentifier();
-
-        $sameHistoryOwner = $guest
-            && $guest->history_owner_id
-            && $consultation->guest?->history_owner_id
-            && (int) $guest->history_owner_id
-                === (int) $consultation
-                    ->guest
-                    ->history_owner_id;
-
         $allowed = $guest
             && $this->accessCookie->isActive($guest)
-            && ($sameDevice || $sameHistoryOwner);
+            && $this->consultationAccess->owns(
+                $guest,
+                $consultation
+            );
 
         abort_unless($allowed, 404);
 

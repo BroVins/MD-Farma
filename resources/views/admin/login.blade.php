@@ -10,13 +10,13 @@
 
     <style>
         :root {
-            --green-950:#052e2b;
-            --green-900:#064e3b;
-            --green-800:#065f46;
-            --green-700:#047857;
-            --green-600:#059669;
-            --green-100:#d1fae5;
-            --green-50:#ecfdf5;
+            --green-950:#1f2937;
+            --green-900:#172554;
+            --green-800:#1e3a8a;
+            --green-700:#1238cc;
+            --green-600:#2a55df;
+            --green-100:#dbeafe;
+            --green-50:#eff6ff;
             --slate-950:#0f172a;
             --slate-700:#334155;
             --slate-500:#64748b;
@@ -36,8 +36,8 @@
                 BlinkMacSystemFont,"Segoe UI",sans-serif;
             color:var(--slate-950);
             background:
-                radial-gradient(circle at 15% 10%,rgba(16,185,129,.22),transparent 25%),
-                radial-gradient(circle at 90% 90%,rgba(5,150,105,.15),transparent 25%),
+                radial-gradient(circle at 15% 10%,rgba(59, 130, 246, .22),transparent 25%),
+                radial-gradient(circle at 90% 90%,rgba(42, 85, 223, .15),transparent 25%),
                 #f8fafc;
         }
 
@@ -92,7 +92,7 @@
 
         .intro-copy p {
             margin:0;
-            color:#d1fae5;
+            color:#dbeafe;
             line-height:1.7;
             font-size:14px;
         }
@@ -101,7 +101,7 @@
             display:flex;
             align-items:center;
             gap:9px;
-            color:#a7f3d0;
+            color:#bfdbfe;
             font-size:11px;
             font-weight:800;
         }
@@ -177,7 +177,7 @@
 
         input:focus {
             border-color:var(--green-600);
-            box-shadow:0 0 0 4px rgba(5,150,105,.12);
+            box-shadow:0 0 0 4px rgba(42, 85, 223, .12);
         }
 
         button {
@@ -189,7 +189,7 @@
             color:#fff;
             font-weight:900;
             cursor:pointer;
-            box-shadow:0 12px 27px rgba(4,120,87,.2);
+            box-shadow:0 12px 27px rgba(18, 56, 204, .2);
         }
 
         .home-link {
@@ -210,12 +210,14 @@
             .login { padding:30px; }
         }
     </style>
+    <link rel="icon" type="image/jpeg" href="{{ asset('images/md-farma-logo.jpeg') }}">
+    <link rel="stylesheet" href="{{ asset('css/md-farma-logo-theme.css') }}">
 </head>
 <body>
     <main class="shell">
         <section class="intro">
             <a class="brand" href="{{ route('home') }}">
-                <span class="brand-mark">+</span>
+                <span class="brand-mark" aria-hidden="true"><img src="{{ asset('images/md-farma-logo.jpeg') }}" alt="" width="52" height="52"></span>
                 <span>MD Farma</span>
             </a>
 

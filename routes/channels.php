@@ -4,6 +4,7 @@ use App\Models\Admin;
 use App\Models\Consultation;
 use App\Models\ConsultationGuest;
 use App\Support\PatientHistoryAccess;
+use App\Support\PatientConsultationAccess;
 use Illuminate\Support\Facades\Broadcast;
 
 Broadcast::channel(
@@ -46,17 +47,10 @@ Broadcast::channel(
             return false;
         }
 
-        $sameDevice = (int) $consultation->guest_id
-            === (int) $actor->getAuthIdentifier();
-
-        $sameHistoryOwner = $actor->history_owner_id
-            && $consultation->guest?->history_owner_id
-            && (int) $actor->history_owner_id
-                === (int) $consultation
-                    ->guest
-                    ->history_owner_id;
-
-        if (! $sameDevice && ! $sameHistoryOwner) {
+        if (! app(PatientConsultationAccess::class)->owns(
+            $actor,
+            $consultation
+        )) {
             return false;
         }
 

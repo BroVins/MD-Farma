@@ -29,6 +29,11 @@ Route::get(
 )->name('partnership');
 
 Route::get(
+    '/kebijakan-privasi',
+    [HomeController::class, 'privacy']
+)->name('privacy');
+
+Route::get(
     '/konsultasi',
     [ConsultationController::class, 'entry']
 )->name('consultation.entry');

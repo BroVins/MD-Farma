@@ -9,6 +9,7 @@
         ?->copy()
         ->timezone($timezone);
     $outcomeSnapshots = $consultation->consultationOutcomes;
+    $isReadOnly = $consultation->status === 'selesai';
 @endphp
 
 <section
@@ -80,6 +81,7 @@
                         id="consultationOutcome"
                         name="outcome_code"
                         required
+                        @disabled($isReadOnly)
                     >
                         <option value="" disabled @selected(! $currentOutcome)>
                             Pilih hasil akhir pelayanan
@@ -115,6 +117,7 @@
                         maxlength="3000"
                         placeholder="Tuliskan ringkasan keputusan, produk atau arahan yang diberikan, serta tindak lanjut penting."
                         @required($outcomeProgress['notes_required'])
+                        @readonly($isReadOnly)
                     >{{ $currentOutcome?->notes }}</textarea>
                 </div>
 
@@ -158,11 +161,17 @@
                             aria-live="polite"
                         ></span>
 
-                        <button type="submit" data-outcome-submit>
+                        <button
+                            type="submit"
+                            data-outcome-submit
+                            @disabled($isReadOnly)
+                        >
                             {{
-                                $currentOutcome
-                                    ? 'Simpan pembaruan'
-                                    : 'Tetapkan hasil akhir'
+                                $isReadOnly
+                                    ? 'Hanya-baca'
+                                    : ($currentOutcome
+                                        ? 'Simpan pembaruan'
+                                        : 'Tetapkan hasil akhir')
                             }}
                         </button>
                     </div>

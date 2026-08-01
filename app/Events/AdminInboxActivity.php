@@ -63,14 +63,12 @@ class AdminInboxActivity implements ShouldBroadcastNow
         ) {
             'consultation_created' => [
                 'Konsultasi baru',
-                $this->consultation->nama
-                    .' baru saja membuat konsultasi.',
+                'Ada pasien yang baru saja membuat konsultasi.',
                 true,
             ],
             'patient_message' => [
                 'Pesan pasien baru',
-                'Pesan baru dari '
-                    .$this->consultation->nama.'.',
+                'Ada pesan pasien baru yang perlu ditinjau.',
                 true,
             ],
             'admin_reply' => [

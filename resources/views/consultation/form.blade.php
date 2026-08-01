@@ -10,13 +10,13 @@
 
     <style>
         :root {
-            --green-950:#052e2b;
-            --green-900:#064e3b;
-            --green-800:#065f46;
-            --green-700:#047857;
-            --green-600:#059669;
-            --green-100:#d1fae5;
-            --green-50:#ecfdf5;
+            --green-950:#1f2937;
+            --green-900:#172554;
+            --green-800:#1e3a8a;
+            --green-700:#1238cc;
+            --green-600:#2a55df;
+            --green-100:#dbeafe;
+            --green-50:#eff6ff;
             --slate-950:#0f172a;
             --slate-700:#334155;
             --slate-500:#64748b;
@@ -35,7 +35,7 @@
                 BlinkMacSystemFont,"Segoe UI",sans-serif;
             color:var(--slate-950);
             background:
-                radial-gradient(circle at 90% 4%,rgba(16,185,129,.17),transparent 24%),
+                radial-gradient(circle at 90% 4%,rgba(59, 130, 246, .17),transparent 24%),
                 #f8fafc;
         }
 
@@ -100,12 +100,12 @@
             background:
                 radial-gradient(circle at 100% 0%,rgba(255,255,255,.14),transparent 35%),
                 linear-gradient(145deg,var(--green-800),var(--green-950));
-            box-shadow:0 25px 70px rgba(6,78,59,.2);
+            box-shadow:0 25px 70px rgba(23, 37, 84, .2);
         }
 
         .eyebrow {
             margin:0 0 12px;
-            color:#a7f3d0;
+            color:#bfdbfe;
             font-size:11px;
             font-weight:900;
             letter-spacing:.08em;
@@ -121,7 +121,7 @@
 
         .intro > p:not(.eyebrow) {
             margin:18px 0 26px;
-            color:#d1fae5;
+            color:#dbeafe;
             line-height:1.68;
             font-size:14px;
         }
@@ -145,7 +145,7 @@
             place-items:center;
             border-radius:9px;
             background:rgba(255,255,255,.13);
-            color:#a7f3d0;
+            color:#bfdbfe;
             font-size:11px;
             font-weight:900;
         }
@@ -157,7 +157,7 @@
         }
 
         .step small {
-            color:#a7f3d0;
+            color:#bfdbfe;
             line-height:1.45;
         }
 
@@ -233,7 +233,7 @@
         input:focus,
         select:focus {
             border-color:var(--green-600);
-            box-shadow:0 0 0 4px rgba(5,150,105,.12);
+            box-shadow:0 0 0 4px rgba(42, 85, 223, .12);
         }
 
         .hint {
@@ -283,7 +283,7 @@
         .type-option input:checked + label {
             border-color:var(--green-600);
             background:var(--green-50);
-            box-shadow:0 0 0 3px rgba(5,150,105,.11);
+            box-shadow:0 0 0 3px rgba(42, 85, 223, .11);
         }
 
 
@@ -342,7 +342,7 @@
         .profile-option input:checked + label {
             border-color:var(--green-600);
             background:var(--green-50);
-            box-shadow:0 0 0 3px rgba(5,150,105,.11);
+            box-shadow:0 0 0 3px rgba(42, 85, 223, .11);
         }
 
         .profile-tools {
@@ -376,7 +376,7 @@
 
         .password-panel {
             padding:18px;
-            border:1px solid #a7f3d0;
+            border:1px solid #bfdbfe;
             border-radius:15px;
             background:var(--green-50);
         }
@@ -427,6 +427,47 @@
             color:var(--slate-700);
         }
 
+        .privacy-consent {
+            margin:-8px 0 22px;
+            padding:16px;
+            border:1px solid var(--slate-200);
+            border-radius:12px;
+            background:#fff;
+        }
+
+        .privacy-consent label {
+            display:flex;
+            align-items:flex-start;
+            gap:11px;
+            margin:0;
+            color:var(--slate-700);
+            font-size:12px;
+            line-height:1.65;
+            cursor:pointer;
+        }
+
+        .privacy-consent input {
+            width:18px;
+            height:18px;
+            margin:2px 0 0;
+            flex:0 0 auto;
+            accent-color:var(--green-700);
+        }
+
+        .privacy-consent a {
+            color:var(--green-800);
+            font-weight:850;
+            text-underline-offset:3px;
+        }
+
+        .privacy-consent small {
+            display:block;
+            margin:9px 0 0 29px;
+            color:var(--slate-500);
+            font-size:10px;
+            line-height:1.55;
+        }
+
         .lock {
             flex:0 0 auto;
             width:30px;
@@ -448,7 +489,7 @@
             color:#fff;
             font-weight:900;
             cursor:pointer;
-            box-shadow:0 13px 30px rgba(4,120,87,.2);
+            box-shadow:0 13px 30px rgba(18, 56, 204, .2);
         }
 
         .submit:hover { filter:brightness(.98); }
@@ -481,12 +522,14 @@
             .field.full { grid-column:auto; }
         }
     </style>
+    <link rel="icon" type="image/jpeg" href="{{ asset('images/md-farma-logo.jpeg') }}">
+    <link rel="stylesheet" href="{{ asset('css/md-farma-logo-theme.css') }}">
 </head>
 <body>
     <header class="topbar">
         <nav>
             <a class="brand" href="{{ route('home') }}">
-                <span class="brand-mark">+</span>
+                <span class="brand-mark" aria-hidden="true"><img src="{{ asset('images/md-farma-logo.jpeg') }}" alt="" width="52" height="52"></span>
                 <span>MD Farma</span>
             </a>
             <a class="back" href="{{ route('home') }}">
@@ -803,6 +846,33 @@
                         Riwayat. Jangan membagikan password, perangkat, atau
                         alamat chat kepada pihak lain.
                     </div>
+                </div>
+
+                <div class="privacy-consent">
+                    <label for="privacy_consent">
+                        <input
+                            id="privacy_consent"
+                            type="checkbox"
+                            name="privacy_consent"
+                            value="1"
+                            @checked(old('privacy_consent'))
+                            required
+                        >
+                        <span>
+                            {{ config('mdfarma.privacy_consent_text') }}
+                            <a
+                                href="{{ route('privacy') }}"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >Baca Kebijakan Privasi MD Farma</a>.
+                        </span>
+                    </label>
+                    <small>
+                        Isi chat tersedia pada dashboard pasien selama 60 hari
+                        setelah konsultasi selesai. Setelah itu, chat tidak
+                        lagi ditampilkan kepada pasien tetapi tetap dikelola
+                        sebagai arsip internal sesuai kebijakan retensi.
+                    </small>
                 </div>
 
                 <button class="submit" type="submit">

@@ -16,6 +16,7 @@
 
     $screeningProgress = $consultation->screeningProgress();
     $outcomeProgress = $consultation->outcomeProgress();
+    $isReadOnly = $consultation->status === 'selesai';
 @endphp
 
 <section
@@ -206,6 +207,7 @@
             </small>
         </div>
 
+        @if (! $isReadOnly)
         <form
             class="classification-form"
             action="{{ route(
@@ -331,6 +333,16 @@
                 aria-live="polite"
             ></span>
         </form>
+        @else
+            <div class="consultation-readonly-notice">
+                <strong>Konsultasi selesai — hanya-baca</strong>
+                <p>
+                    Klasifikasi, skrining, dan hasil akhir dikunci untuk menjaga
+                    integritas catatan. Aktifkan kembali konsultasi dengan alasan
+                    yang jelas sebelum melakukan perubahan.
+                </p>
+            </div>
+        @endif
 
         <div
             class="screening-slot"
@@ -361,6 +373,11 @@
                 compact('consultation', 'timezone')
             )
         </div>
+
+        @include(
+            'admin.inbox.partials.status-history',
+            compact('consultation', 'timezone')
+        )
     </section>
 
     <div
@@ -626,6 +643,17 @@
                 >
                     @csrf
                     <input type="hidden" name="status" value="aktif">
+                    <label class="reopen-reason-field">
+                        <span>Alasan mengaktifkan kembali</span>
+                        <textarea
+                            name="status_reason"
+                            rows="2"
+                            minlength="10"
+                            maxlength="1000"
+                            required
+                            placeholder="Contoh: pasien memberikan informasi tambahan yang perlu ditinjau."
+                        ></textarea>
+                    </label>
                     <button type="submit" class="reopen-button">
                         Aktifkan kembali
                     </button>

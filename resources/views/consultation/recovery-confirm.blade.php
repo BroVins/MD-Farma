@@ -7,13 +7,13 @@
 
     <style>
         :root {
-            --green-950:#052e2b;
-            --green-900:#064e3b;
-            --green-800:#065f46;
-            --green-700:#047857;
-            --green-600:#059669;
-            --green-100:#d1fae5;
-            --green-50:#ecfdf5;
+            --green-950:#1f2937;
+            --green-900:#172554;
+            --green-800:#1e3a8a;
+            --green-700:#1238cc;
+            --green-600:#2a55df;
+            --green-100:#dbeafe;
+            --green-50:#eff6ff;
             --red-800:#991b1b;
             --slate-950:#0f172a;
             --slate-700:#334155;
@@ -33,7 +33,7 @@
                 BlinkMacSystemFont,"Segoe UI",sans-serif;
             color:var(--slate-950);
             background:
-                radial-gradient(circle at 88% 5%,rgba(16,185,129,.18),transparent 25%),
+                radial-gradient(circle at 88% 5%,rgba(59, 130, 246, .18),transparent 25%),
                 #f8fafc;
         }
 
@@ -97,7 +97,7 @@
 
         .eyebrow {
             margin:0 0 9px;
-            color:#a7f3d0;
+            color:#bfdbfe;
             font-size:11px;
             font-weight:900;
             letter-spacing:.08em;
@@ -113,7 +113,7 @@
 
         .head p:last-child {
             margin:13px 0 0;
-            color:#d1fae5;
+            color:#dbeafe;
             font-size:13px;
             line-height:1.65;
         }
@@ -163,7 +163,7 @@
             display:flex;
             gap:11px;
             align-items:flex-start;
-            border:1px solid #a7f3d0;
+            border:1px solid #bfdbfe;
             border-radius:13px;
             background:var(--green-50);
             color:var(--green-900);
@@ -202,7 +202,7 @@
             border:0;
             background:linear-gradient(145deg,var(--green-600),var(--green-800));
             color:#fff;
-            box-shadow:0 13px 30px rgba(4,120,87,.2);
+            box-shadow:0 13px 30px rgba(18, 56, 204, .2);
         }
 
         .button.secondary {
@@ -235,12 +235,14 @@
             .actions { grid-template-columns:1fr; }
         }
     </style>
+    <link rel="icon" type="image/jpeg" href="{{ asset('images/md-farma-logo.jpeg') }}">
+    <link rel="stylesheet" href="{{ asset('css/md-farma-logo-theme.css') }}">
 </head>
 <body>
     <header class="topbar">
         <nav>
             <a class="brand" href="{{ route('home') }}">
-                <span class="brand-mark">+</span>
+                <span class="brand-mark" aria-hidden="true"><img src="{{ asset('images/md-farma-logo.jpeg') }}" alt="" width="52" height="52"></span>
                 <span>MD Farma</span>
             </a>
         </nav>

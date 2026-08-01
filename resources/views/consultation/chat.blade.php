@@ -13,33 +13,33 @@
 
     <style>
         :root {
-            --brand: #198754;
-            --brand-dark: #126b43;
-            --brand-deep: #0b5033;
-            --teal: #18b7a5;
-            --teal-dark: #0f8f82;
-            --mint-25: #f8fdfb;
-            --mint-50: #effaf5;
-            --mint-100: #ddf5e9;
-            --mint-200: #c6ecda;
+            --brand: #1238cc;
+            --brand-dark: #1735a6;
+            --brand-deep: #232b3a;
+            --teal: #53658d;
+            --teal-dark: #3d4f79;
+            --mint-25: #f8f9fc;
+            --mint-50: #f2f6ff;
+            --mint-100: #e4edff;
+            --mint-200: #ccdafe;
             --orange-50: #fff8ed;
             --orange-100: #ffedd2;
             --orange-700: #b64c0d;
-            --slate-950: #10221a;
-            --slate-800: #24372f;
-            --slate-700: #405249;
-            --slate-600: #5f7068;
-            --slate-500: #7b8982;
+            --slate-950: #1f2937;
+            --slate-800: #303744;
+            --slate-700: #4b5563;
+            --slate-600: #687080;
+            --slate-500: #7f8795;
             --slate-400: #a3aea9;
-            --slate-300: #cdd6d1;
-            --slate-200: #e3e9e6;
-            --slate-100: #f1f5f3;
+            --slate-300: #d6dae2;
+            --slate-200: #e3e6ec;
+            --slate-100: #f1f3f7;
             --white: #ffffff;
             --danger: #dc2626;
             --danger-soft: #fff1f2;
-            --shadow-sm: 0 5px 18px rgba(26, 74, 53, .07);
-            --shadow-md: 0 18px 45px rgba(26, 74, 53, .12);
-            --shadow-lg: 0 26px 70px rgba(15, 80, 52, .16);
+            --shadow-sm: 0 5px 18px rgba(18, 56, 204, .08);
+            --shadow-md: 0 18px 45px rgba(18, 56, 204, .13);
+            --shadow-lg: 0 26px 70px rgba(18, 56, 204, .17);
         }
 
         * {
@@ -56,9 +56,9 @@
             margin: 0;
             color: var(--slate-950);
             background:
-                radial-gradient(circle at 8% 8%, rgba(24, 183, 165, .14), transparent 27rem),
-                radial-gradient(circle at 92% 92%, rgba(25, 135, 84, .12), transparent 30rem),
-                linear-gradient(145deg, #f8fcfa 0%, #edf8f3 100%);
+                radial-gradient(circle at 8% 8%, rgba(83, 101, 141, .14), transparent 27rem),
+                radial-gradient(circle at 92% 92%, rgba(18, 56, 204, .12), transparent 30rem),
+                linear-gradient(145deg, #f8f9fc 0%, #edf8f3 100%);
             font-family: Inter, ui-sans-serif, system-ui, -apple-system,
                 BlinkMacSystemFont, "Segoe UI", sans-serif;
         }
@@ -83,7 +83,7 @@
         a:focus-visible,
         textarea:focus-visible,
         label:focus-visible {
-            outline: 3px solid rgba(24, 183, 165, .26);
+            outline: 3px solid rgba(83, 101, 141, .26);
             outline-offset: 2px;
         }
 
@@ -96,7 +96,7 @@
             justify-content: space-between;
             min-height: 68px;
             padding: 10px clamp(16px, 4vw, 58px);
-            border-bottom: 1px solid rgba(25, 135, 84, .1);
+            border-bottom: 1px solid rgba(18, 56, 204, .1);
             background: rgba(255, 255, 255, .88);
             backdrop-filter: blur(18px);
         }
@@ -119,7 +119,7 @@
             border-radius: 13px;
             color: #fff;
             background: linear-gradient(145deg, var(--brand), var(--teal));
-            box-shadow: 0 9px 22px rgba(25, 135, 84, .22);
+            box-shadow: 0 9px 22px rgba(18, 56, 204, .24);
         }
 
         .brand-mark svg {
@@ -169,7 +169,7 @@
 
         .chat-shell {
             overflow: hidden;
-            border: 1px solid rgba(25, 135, 84, .13);
+            border: 1px solid rgba(18, 56, 204, .13);
             border-radius: 30px;
             background: rgba(255, 255, 255, .93);
             box-shadow: var(--shadow-lg);
@@ -183,10 +183,10 @@
             gap: 14px;
             min-height: 112px;
             padding: 21px 24px;
-            border-bottom: 1px solid rgba(25, 135, 84, .1);
+            border-bottom: 1px solid rgba(18, 56, 204, .1);
             background:
-                radial-gradient(circle at 91% 12%, rgba(24, 183, 165, .17), transparent 13rem),
-                linear-gradient(135deg, #ffffff, #effaf5);
+                radial-gradient(circle at 91% 12%, rgba(83, 101, 141, .17), transparent 13rem),
+                linear-gradient(135deg, #ffffff, #f2f6ff);
         }
 
         .back-button {
@@ -226,8 +226,8 @@
             border-radius: 50%;
             color: #fff;
             background:
-                linear-gradient(145deg, rgba(25, 135, 84, .94), rgba(24, 183, 165, .9));
-            box-shadow: 0 10px 24px rgba(25, 135, 84, .2);
+                linear-gradient(145deg, rgba(18, 56, 204, .94), rgba(83, 101, 141, .9));
+            box-shadow: 0 10px 24px rgba(18, 56, 204, .2);
             font-size: 17px;
             font-weight: 900;
         }
@@ -300,7 +300,7 @@
             align-items: center;
             gap: 9px;
             padding: 10px 13px;
-            border: 1px solid rgba(24, 183, 165, .22);
+            border: 1px solid rgba(83, 101, 141, .22);
             border-radius: 16px;
             color: var(--slate-800);
             background: rgba(255, 255, 255, .74);
@@ -383,7 +383,7 @@
             align-items: center;
             gap: 10px;
             padding: 12px;
-            border: 1px solid rgba(25, 135, 84, .11);
+            border: 1px solid rgba(18, 56, 204, .11);
             border-radius: 16px;
             background: rgba(255, 255, 255, .8);
         }
@@ -505,10 +505,10 @@
             padding: 22px 20px 16px;
             background:
                 linear-gradient(rgba(255, 255, 255, .93), rgba(255, 255, 255, .93)),
-                radial-gradient(circle at 15px 15px, rgba(24, 183, 165, .13) 1.2px, transparent 1.3px);
+                radial-gradient(circle at 15px 15px, rgba(83, 101, 141, .13) 1.2px, transparent 1.3px);
             background-size: auto, 30px 30px;
             scroll-behavior: smooth;
-            scrollbar-color: rgba(25, 135, 84, .25) transparent;
+            scrollbar-color: rgba(18, 56, 204, .25) transparent;
             scrollbar-width: thin;
         }
 
@@ -550,12 +550,12 @@
             gap: 11px;
             margin: -7px auto 20px;
             padding: 13px 14px;
-            border: 1px solid rgba(24, 183, 165, .2);
+            border: 1px solid rgba(83, 101, 141, .2);
             border-radius: 17px;
             color: var(--slate-700);
             background:
                 linear-gradient(135deg, rgba(239, 250, 245, .98), rgba(245, 253, 251, .98));
-            box-shadow: 0 8px 24px rgba(25, 135, 84, .07);
+            box-shadow: 0 8px 24px rgba(18, 56, 204, .07);
         }
 
         .service-reminder-icon {
@@ -566,7 +566,7 @@
             flex: 0 0 auto;
             border-radius: 12px;
             color: var(--teal-dark);
-            background: rgba(24, 183, 165, .12);
+            background: rgba(83, 101, 141, .12);
         }
 
         .service-reminder-icon svg {
@@ -614,7 +614,7 @@
             border-radius: 50%;
             color: #fff;
             background: linear-gradient(145deg, var(--brand), var(--teal));
-            box-shadow: 0 5px 14px rgba(25, 135, 84, .18);
+            box-shadow: 0 5px 14px rgba(18, 56, 204, .18);
             font-size: 10px;
             font-weight: 900;
         }
@@ -627,15 +627,15 @@
             border-radius: 19px 19px 19px 6px;
             color: var(--slate-800);
             background: rgba(255, 255, 255, .97);
-            box-shadow: 0 8px 23px rgba(25, 64, 47, .07);
+            box-shadow: 0 8px 23px rgba(31, 41, 55, .07);
             overflow-wrap: anywhere;
         }
 
         .message-row.outgoing .message {
-            border-color: rgba(24, 183, 165, .13);
+            border-color: rgba(83, 101, 141, .13);
             border-radius: 19px 19px 6px 19px;
             background: linear-gradient(135deg, #e9faf5 0%, #d9f5eb 100%);
-            box-shadow: 0 8px 23px rgba(24, 183, 165, .09);
+            box-shadow: 0 8px 23px rgba(83, 101, 141, .09);
         }
 
         .message-row.classification-notice .message {
@@ -699,7 +699,7 @@
             gap: 10px;
             margin-top: 9px;
             padding: 11px 12px;
-            border: 1px solid rgba(25, 135, 84, .14);
+            border: 1px solid rgba(18, 56, 204, .14);
             border-radius: 14px;
             color: inherit;
             background: rgba(255, 255, 255, .72);
@@ -707,7 +707,7 @@
         }
 
         .message-file-link:hover {
-            border-color: rgba(24, 183, 165, .4);
+            border-color: rgba(83, 101, 141, .4);
             background: rgba(255, 255, 255, .95);
         }
 
@@ -823,7 +823,7 @@
         .composer-panel {
             position: relative;
             padding: 13px 18px 17px;
-            border-top: 1px solid rgba(25, 135, 84, .1);
+            border-top: 1px solid rgba(18, 56, 204, .1);
             background: rgba(255, 255, 255, .96);
         }
 
@@ -846,7 +846,7 @@
             gap: 7px;
             flex: 0 0 auto;
             padding: 8px 11px;
-            border: 1px solid rgba(25, 135, 84, .13);
+            border: 1px solid rgba(18, 56, 204, .13);
             border-radius: 999px;
             color: var(--slate-700);
             background: var(--mint-50);
@@ -934,10 +934,10 @@
             width: min(255px, calc(100vw - 32px));
             gap: 4px;
             padding: 7px;
-            border: 1px solid rgba(25, 135, 84, .14);
+            border: 1px solid rgba(18, 56, 204, .14);
             border-radius: 18px;
             background: rgba(255, 255, 255, .98);
-            box-shadow: 0 18px 48px rgba(15, 80, 52, .18);
+            box-shadow: 0 18px 48px rgba(31, 41, 55, .18);
             backdrop-filter: blur(18px);
         }
 
@@ -1065,16 +1065,16 @@
             align-items: end;
             gap: 7px;
             padding: 7px;
-            border: 1px solid rgba(24, 183, 165, .24);
+            border: 1px solid rgba(83, 101, 141, .24);
             border-radius: 23px;
             background: #fff;
-            box-shadow: 0 11px 30px rgba(24, 183, 165, .12);
+            box-shadow: 0 11px 30px rgba(83, 101, 141, .12);
         }
 
         .composer:focus-within {
-            border-color: rgba(24, 183, 165, .65);
-            box-shadow: 0 0 0 4px rgba(24, 183, 165, .1),
-                0 11px 30px rgba(24, 183, 165, .12);
+            border-color: rgba(83, 101, 141, .65);
+            box-shadow: 0 0 0 4px rgba(83, 101, 141, .1),
+                0 11px 30px rgba(83, 101, 141, .12);
         }
 
         .composer-icon,
@@ -1134,7 +1134,7 @@
         .send-button {
             color: #fff;
             background: linear-gradient(145deg, var(--teal), var(--brand));
-            box-shadow: 0 8px 20px rgba(25, 135, 84, .24);
+            box-shadow: 0 8px 20px rgba(18, 56, 204, .24);
         }
 
         .send-button:hover {
@@ -1367,6 +1367,8 @@
             }
         }
     </style>
+    <link rel="icon" type="image/jpeg" href="{{ asset('images/md-farma-logo.jpeg') }}">
+    <link rel="stylesheet" href="{{ asset('css/md-farma-logo-theme.css') }}">
 </head>
 <body>
     @php
@@ -1375,11 +1377,7 @@
 
     <header class="site-bar">
         <a class="brand" href="{{ route('home') }}">
-            <span class="brand-mark" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
-                    <path d="M12 4v16M4 12h16" stroke-linecap="round"/>
-                </svg>
-            </span>
+            <span class="brand-mark" aria-hidden="true"><img src="{{ asset('images/md-farma-logo.jpeg') }}" alt="" width="52" height="52"></span>
             <span>MD Farma</span>
         </a>
 
@@ -1963,7 +1961,7 @@
                                         </span>
                                         <span class="attachment-option-copy">
                                             <strong>Kirim dokumen</strong>
-                                            <span>PDF, Word, atau Excel maksimal 10 MB</span>
+                                            <span>PDF maksimal 10 MB</span>
                                         </span>
                                     </button>
                                 </div>
@@ -2013,7 +2011,7 @@
                         <input
                             id="chatDocument"
                             type="file"
-                            accept=".pdf,.doc,.docx,.xls,.xlsx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                            accept=".pdf,application/pdf"
                             hidden
                             data-attachment-input
                             data-attachment-kind="document"
@@ -2441,7 +2439,7 @@
                 if (previewName) previewName.textContent = 'Lampiran dipilih';
                 if (previewMeta) {
                     previewMeta.textContent =
-                        'Gambar maksimal 5 MB · Dokumen maksimal 10 MB';
+                        'Gambar maksimal 5 MB · PDF maksimal 10 MB';
                 }
 
                 preview?.classList.remove('visible', 'is-document');
@@ -2462,13 +2460,7 @@
                     'image/png',
                     'image/webp',
                 ];
-                const documentExtensions = [
-                    'pdf',
-                    'doc',
-                    'docx',
-                    'xls',
-                    'xlsx',
-                ];
+                const documentExtensions = ['pdf'];
 
                 const isImage = imageTypes.includes(file.type)
                     || ['jpg', 'jpeg', 'png', 'webp']
@@ -2476,7 +2468,7 @@
 
                 if (kind === 'document') {
                     if (!documentExtensions.includes(fileExtension(file.name))) {
-                        return 'Dokumen harus berformat PDF, Word, atau Excel.';
+                        return 'Dokumen harus berformat PDF.';
                     }
 
                     if (file.size > 10 * 1024 * 1024) {
@@ -2564,10 +2556,30 @@
                 if (!expiresAt || isAdminView) return;
 
                 clearTimeout(sessionTimer);
-                const delay = new Date(expiresAt).getTime() - Date.now();
+
+                const expiresAtMs = Date.parse(expiresAt);
+                if (!Number.isFinite(expiresAtMs)) return;
+
+                const delay = expiresAtMs - Date.now();
 
                 if (delay <= 0) {
                     expireSession();
+                    return;
+                }
+
+                /*
+                 * Browser menggunakan timer 32-bit. Masa perangkat 90 hari
+                 * lebih besar dari batas sekitar 24,8 hari dan sebelumnya
+                 * dapat membuat timer aktif seketika, lalu menonaktifkan
+                 * composer chat. Jadwalkan ulang secara bertahap.
+                 */
+                const maxBrowserTimeoutMs = 2_147_000_000;
+
+                if (delay > maxBrowserTimeoutMs) {
+                    sessionTimer = setTimeout(
+                        () => scheduleExpiry(expiresAt),
+                        maxBrowserTimeoutMs
+                    );
                     return;
                 }
 

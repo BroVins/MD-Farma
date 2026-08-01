@@ -39,7 +39,7 @@ return [
      */
     'history_password_min_length' => (int) env(
         'CONSULTATION_HISTORY_PASSWORD_MIN_LENGTH',
-        10
+        12
     ),
 
     'history_password_max_attempts' => (int) env(
@@ -54,7 +54,7 @@ return [
 
     'history_unlock_minutes' => (int) env(
         'CONSULTATION_HISTORY_UNLOCK_MINUTES',
-        480
+        30
     ),
 
     /*

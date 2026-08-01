@@ -7,13 +7,13 @@
 
     <style>
         :root {
-            --green-950:#052e2b;
-            --green-900:#064e3b;
-            --green-800:#065f46;
-            --green-700:#047857;
-            --green-600:#059669;
-            --green-100:#d1fae5;
-            --green-50:#ecfdf5;
+            --green-950:#1f2937;
+            --green-900:#172554;
+            --green-800:#1e3a8a;
+            --green-700:#1238cc;
+            --green-600:#2a55df;
+            --green-100:#dbeafe;
+            --green-50:#eff6ff;
             --amber-100:#fef3c7;
             --amber-800:#92400e;
             --red-100:#fee2e2;
@@ -36,7 +36,7 @@
                 BlinkMacSystemFont,"Segoe UI",sans-serif;
             color:var(--slate-950);
             background:
-                radial-gradient(circle at 88% 4%,rgba(16,185,129,.18),transparent 25%),
+                radial-gradient(circle at 88% 4%,rgba(59, 130, 246, .18),transparent 25%),
                 #f8fafc;
         }
 
@@ -101,12 +101,12 @@
             background:
                 radial-gradient(circle at 100% 0%,rgba(255,255,255,.14),transparent 38%),
                 linear-gradient(145deg,var(--green-800),var(--green-950));
-            box-shadow:0 24px 70px rgba(6,78,59,.18);
+            box-shadow:0 24px 70px rgba(23, 37, 84, .18);
         }
 
         .eyebrow {
             margin:0 0 10px;
-            color:#a7f3d0;
+            color:#bfdbfe;
             font-size:11px;
             font-weight:900;
             letter-spacing:.08em;
@@ -122,7 +122,7 @@
 
         .intro > p:last-of-type {
             margin:16px 0 24px;
-            color:#d1fae5;
+            color:#dbeafe;
             font-size:13px;
             line-height:1.65;
         }
@@ -143,7 +143,7 @@
             place-items:center;
             border-radius:9px;
             background:rgba(255,255,255,.13);
-            color:#a7f3d0;
+            color:#bfdbfe;
             font-size:11px;
             font-weight:900;
         }
@@ -155,7 +155,7 @@
         }
 
         .step small {
-            color:#a7f3d0;
+            color:#bfdbfe;
             line-height:1.45;
         }
 
@@ -232,7 +232,7 @@
 
         input:focus {
             border-color:var(--green-600);
-            box-shadow:0 0 0 4px rgba(5,150,105,.12);
+            box-shadow:0 0 0 4px rgba(42, 85, 223, .12);
         }
 
         .hint {
@@ -253,7 +253,7 @@
             color:#fff;
             font-weight:900;
             cursor:pointer;
-            box-shadow:0 13px 30px rgba(4,120,87,.2);
+            box-shadow:0 13px 30px rgba(18, 56, 204, .2);
         }
 
         .privacy {
@@ -282,12 +282,14 @@
             .intro,.card { padding:24px 22px; border-radius:20px; }
         }
     </style>
+    <link rel="icon" type="image/jpeg" href="{{ asset('images/md-farma-logo.jpeg') }}">
+    <link rel="stylesheet" href="{{ asset('css/md-farma-logo-theme.css') }}">
 </head>
 <body>
     <header class="topbar">
         <nav>
             <a class="brand" href="{{ route('home') }}">
-                <span class="brand-mark">+</span>
+                <span class="brand-mark" aria-hidden="true"><img src="{{ asset('images/md-farma-logo.jpeg') }}" alt="" width="52" height="52"></span>
                 <span>MD Farma</span>
             </a>
             <a class="back" href="{{ route('consultation.create') }}">

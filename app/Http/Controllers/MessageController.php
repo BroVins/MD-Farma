@@ -8,6 +8,8 @@ use App\Events\MessageSent;
 use App\Models\AnalyticsEvent;
 use App\Models\Consultation;
 use App\Models\Message;
+use App\Support\PatientConsultationAccess;
+use App\Support\ConsultationAudit;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,23 +18,21 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
 
 class MessageController extends Controller
 {
-    private const ATTACHMENT_MAX_KB = 10240;
+    private const IMAGE_MAX_KB = 5120;
 
-    private const ATTACHMENT_EXTENSIONS = [
-        'jpg',
-        'jpeg',
-        'png',
-        'webp',
-        'pdf',
-        'doc',
-        'docx',
-        'xls',
-        'xlsx',
+    private const PDF_MAX_KB = 10240;
+
+    private const ATTACHMENT_MIME_EXTENSIONS = [
+        'image/jpeg' => 'jpg',
+        'image/png' => 'png',
+        'image/webp' => 'webp',
+        'application/pdf' => 'pdf',
     ];
 
     public function index(
@@ -96,7 +96,8 @@ class MessageController extends Controller
 
     public function store(
         Request $request,
-        Consultation $consultation
+        Consultation $consultation,
+        PatientConsultationAccess $consultationAccess
     ): JsonResponse|RedirectResponse {
         abort_if(
             $consultation->status !== 'aktif',
@@ -108,8 +109,10 @@ class MessageController extends Controller
 
         abort_unless(
             $guest
-            && (int) $consultation->guest_id
-                === (int) $guest->getAuthIdentifier(),
+            && $consultationAccess->owns(
+                $guest,
+                $consultation
+            ),
             404
         );
 
@@ -119,13 +122,14 @@ class MessageController extends Controller
             $consultation
         );
 
-        $message = DB::transaction(
-            function () use (
-                $request,
-                $consultation,
-                $validated,
-                $attachmentPath
-            ): Message {
+        try {
+            $message = DB::transaction(
+                function () use (
+                    $request,
+                    $consultation,
+                    $validated,
+                    $attachmentPath
+                ): Message {
                 $message = $consultation
                     ->messages()
                     ->create([
@@ -158,9 +162,14 @@ class MessageController extends Controller
                     'message:'.$message->id
                 );
 
-                return $message;
-            }
-        );
+                    return $message;
+                }
+            );
+        } catch (Throwable $exception) {
+            $this->deleteAttachmentIfStored($attachmentPath);
+
+            throw $exception;
+        }
 
         return $this->broadcastAndRespond(
             $request,
@@ -185,13 +194,14 @@ class MessageController extends Controller
             $consultation
         );
 
-        $message = DB::transaction(
-            function () use (
-                $request,
-                $consultation,
-                $validated,
-                $attachmentPath
-            ): Message {
+        try {
+            $message = DB::transaction(
+                function () use (
+                    $request,
+                    $consultation,
+                    $validated,
+                    $attachmentPath
+                ): Message {
                 $message = $consultation
                     ->messages()
                     ->create([
@@ -231,9 +241,14 @@ class MessageController extends Controller
                     'message:'.$message->id
                 );
 
-                return $message;
-            }
-        );
+                    return $message;
+                }
+            );
+        } catch (Throwable $exception) {
+            $this->deleteAttachmentIfStored($attachmentPath);
+
+            throw $exception;
+        }
 
         return $this->broadcastAndRespond(
             $request,
@@ -243,8 +258,10 @@ class MessageController extends Controller
     }
 
     public function attachment(
+        Request $request,
         Consultation $consultation,
-        Message $message
+        Message $message,
+        ConsultationAudit $audit
     ): StreamedResponse {
         abort_unless(
             (int) $message->consultation_id
@@ -259,15 +276,42 @@ class MessageController extends Controller
             404
         );
 
-        return Storage::disk('local')->response(
-            $message->image,
-            $message->attachmentName()
+        $audit->recordAccess(
+            $request,
+            'attachment_opened',
+            $consultation,
+            $message,
+            metadata: [
+                'attachment_type' => $message->attachmentType(),
+                'attachment_extension' => $message->attachmentExtension(),
+            ]
         );
+
+        $response = $message->attachmentType() === 'document'
+            ? Storage::disk('local')->download(
+                $message->image,
+                $message->attachmentName()
+            )
+            : Storage::disk('local')->response(
+                $message->image,
+                $message->attachmentName()
+            );
+
+        $response->headers->set(
+            'X-Content-Type-Options',
+            'nosniff'
+        );
+        $response->headers->set(
+            'Cache-Control',
+            'private, no-store, max-age=0'
+        );
+
+        return $response;
     }
 
     private function validateMessage(Request $request): array
     {
-        return $request->validate([
+        $validated = $request->validate([
             'message' => [
                 'nullable',
                 'string',
@@ -277,11 +321,9 @@ class MessageController extends Controller
             'image' => [
                 'nullable',
                 'file',
-                'mimes:'.implode(
-                    ',',
-                    self::ATTACHMENT_EXTENSIONS
-                ),
-                'max:'.self::ATTACHMENT_MAX_KB,
+                'mimes:jpg,jpeg,png,webp,pdf',
+                'mimetypes:image/jpeg,image/png,image/webp,application/pdf',
+                'max:'.self::PDF_MAX_KB,
             ],
         ], [
             'message.required_without' =>
@@ -289,10 +331,41 @@ class MessageController extends Controller
             'image.file' =>
                 'Lampiran yang dipilih tidak valid.',
             'image.mimes' =>
-                'Lampiran harus berupa JPG, PNG, WebP, PDF, Word, atau Excel.',
+                'Lampiran hanya boleh berupa JPG, PNG, WebP, atau PDF.',
+            'image.mimetypes' =>
+                'Isi file tidak sesuai. Gunakan gambar JPG, PNG, WebP, atau PDF yang valid.',
             'image.max' =>
-                'Ukuran lampiran maksimal 10 MB.',
+                'Ukuran dokumen PDF maksimal 10 MB.',
         ]);
+
+        $file = $request->file('image');
+
+        if (! $file) {
+            return $validated;
+        }
+
+        $mimeType = (string) $file->getMimeType();
+
+        if (! array_key_exists(
+            $mimeType,
+            self::ATTACHMENT_MIME_EXTENSIONS
+        )) {
+            throw ValidationException::withMessages([
+                'image' =>
+                    'Lampiran hanya boleh berupa JPG, PNG, WebP, atau PDF yang valid.',
+            ]);
+        }
+
+        if (
+            str_starts_with($mimeType, 'image/')
+            && $file->getSize() > self::IMAGE_MAX_KB * 1024
+        ) {
+            throw ValidationException::withMessages([
+                'image' => 'Ukuran gambar maksimal 5 MB.',
+            ]);
+        }
+
+        return $validated;
     }
 
     private function storeAttachment(
@@ -309,9 +382,17 @@ class MessageController extends Controller
             $file->getClientOriginalName(),
             PATHINFO_FILENAME
         );
-        $extension = strtolower(
-            $file->getClientOriginalExtension()
-        );
+        $mimeType = (string) $file->getMimeType();
+        $extension = self::ATTACHMENT_MIME_EXTENSIONS[
+            $mimeType
+        ] ?? null;
+
+        if (! $extension) {
+            throw ValidationException::withMessages([
+                'image' =>
+                    'Lampiran hanya boleh berupa JPG, PNG, WebP, atau PDF yang valid.',
+            ]);
+        }
 
         $safeBaseName = Str::slug(
             Str::ascii($originalName)
@@ -320,6 +401,8 @@ class MessageController extends Controller
         if ($safeBaseName === '') {
             $safeBaseName = 'lampiran';
         }
+
+        $safeBaseName = mb_substr($safeBaseName, 0, 80);
 
         $fileName = Str::uuid()
             .'_'
@@ -332,6 +415,26 @@ class MessageController extends Controller
             $fileName,
             'local'
         );
+    }
+
+    private function deleteAttachmentIfStored(
+        ?string $attachmentPath
+    ): void {
+        if (! $attachmentPath) {
+            return;
+        }
+
+        try {
+            Storage::disk('local')->delete($attachmentPath);
+        } catch (Throwable $exception) {
+            Log::warning(
+                'Lampiran gagal dibersihkan setelah transaksi pesan gagal.',
+                [
+                    'path' => $attachmentPath,
+                    'exception' => $exception::class,
+                ]
+            );
+        }
     }
 
     private function broadcastAndRespond(

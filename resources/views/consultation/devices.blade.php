@@ -10,13 +10,13 @@
 
     <style>
         :root {
-            --green-950:#052e2b;
-            --green-900:#064e3b;
-            --green-800:#065f46;
-            --green-700:#047857;
-            --green-600:#059669;
-            --green-100:#d1fae5;
-            --green-50:#ecfdf5;
+            --green-950:#1f2937;
+            --green-900:#172554;
+            --green-800:#1e3a8a;
+            --green-700:#1238cc;
+            --green-600:#2a55df;
+            --green-100:#dbeafe;
+            --green-50:#eff6ff;
             --red-800:#991b1b;
             --red-700:#b91c1c;
             --red-100:#fee2e2;
@@ -44,7 +44,7 @@
                 BlinkMacSystemFont,"Segoe UI",sans-serif;
             color:var(--slate-950);
             background:
-                radial-gradient(circle at 88% 4%,rgba(16,185,129,.16),transparent 25%),
+                radial-gradient(circle at 88% 4%,rgba(59, 130, 246, .16),transparent 25%),
                 #f8fafc;
         }
 
@@ -111,12 +111,12 @@
             background:
                 radial-gradient(circle at 95% 0%,rgba(255,255,255,.14),transparent 36%),
                 linear-gradient(145deg,var(--green-800),var(--green-950));
-            box-shadow:0 22px 65px rgba(6,78,59,.19);
+            box-shadow:0 22px 65px rgba(23, 37, 84, .19);
         }
 
         .eyebrow {
             margin:0 0 9px;
-            color:#a7f3d0;
+            color:#bfdbfe;
             font-size:11px;
             font-weight:900;
             letter-spacing:.09em;
@@ -133,7 +133,7 @@
         .hero p:last-child {
             max-width:690px;
             margin:14px 0 0;
-            color:#d1fae5;
+            color:#dbeafe;
             font-size:13px;
             line-height:1.65;
         }
@@ -156,7 +156,7 @@
         .hero-stat span {
             display:block;
             margin-top:8px;
-            color:#d1fae5;
+            color:#dbeafe;
             font-size:11px;
             font-weight:800;
         }
@@ -164,7 +164,7 @@
         .notice {
             margin-top:18px;
             padding:13px 16px;
-            border:1px solid #a7f3d0;
+            border:1px solid #bfdbfe;
             border-radius:13px;
             background:var(--green-50);
             color:var(--green-900);
@@ -312,7 +312,7 @@
 
         .button:focus-visible,
         a:focus-visible {
-            outline:3px solid rgba(16,185,129,.28);
+            outline:3px solid rgba(59, 130, 246, .28);
             outline-offset:3px;
         }
 
@@ -434,12 +434,14 @@
             .back { font-size:11px; }
         }
     </style>
+    <link rel="icon" type="image/jpeg" href="{{ asset('images/md-farma-logo.jpeg') }}">
+    <link rel="stylesheet" href="{{ asset('css/md-farma-logo-theme.css') }}">
 </head>
 <body>
     <header class="topbar">
         <nav>
             <a class="brand" href="{{ route('home') }}">
-                <span class="brand-mark">+</span>
+                <span class="brand-mark" aria-hidden="true"><img src="{{ asset('images/md-farma-logo.jpeg') }}" alt="" width="52" height="52"></span>
                 <span>MD Farma</span>
             </a>
             <a class="back" href="{{ route('consultation.entry') }}">

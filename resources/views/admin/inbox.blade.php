@@ -23,14 +23,14 @@
 
     <style>
         :root {
-            --green-950:#052e28;
-            --green-900:#064e3b;
-            --green-800:#065f46;
-            --green-700:#047857;
-            --green-600:#059669;
-            --green-500:#10b981;
-            --green-100:#d1fae5;
-            --green-50:#ecfdf5;
+            --green-950:#1f2937;
+            --green-900:#172554;
+            --green-800:#1e3a8a;
+            --green-700:#1238cc;
+            --green-600:#2a55df;
+            --green-500:#3b82f6;
+            --green-100:#dbeafe;
+            --green-50:#eff6ff;
             --amber-700:#b45309;
             --amber-100:#fef3c7;
             --blue-700:#1d4ed8;
@@ -165,7 +165,7 @@
             background:#f59e0b;
         }
 
-        .live-state.connected .live-dot { background:#4ade80; }
+        .live-state.connected .live-dot { background:#93c5fd; }
         .live-state.disconnected .live-dot { background:#f87171; }
 
         .notification-toggle,
@@ -264,7 +264,7 @@
 
         .search-box input:focus {
             border-color:var(--green-500);
-            box-shadow:0 0 0 3px rgba(16,185,129,.13);
+            box-shadow:0 0 0 3px rgba(59, 130, 246, .13);
             background:#fff;
         }
 
@@ -385,7 +385,7 @@
             );
             font-size:16px;
             font-weight:900;
-            box-shadow:0 7px 18px rgba(5,150,105,.18);
+            box-shadow:0 7px 18px rgba(42, 85, 223, .18);
         }
 
         .conversation-avatar.large {
@@ -578,7 +578,7 @@
             background:
                 radial-gradient(
                     circle at 20% 20%,
-                    rgba(16,185,129,.10),
+                    rgba(59, 130, 246, .10),
                     transparent 28%
                 ),
                 linear-gradient(145deg,#eef5f2,#e4ece8);
@@ -612,7 +612,7 @@
             height:100%;
             display:grid;
             grid-template-rows:auto auto minmax(0,1fr) auto;
-            background:#edf3f0;
+            background:#f1f3f7;
         }
 
         .conversation-header {
@@ -764,7 +764,7 @@
 
         .classification-control select:focus {
             border-color:var(--green-500);
-            box-shadow:0 0 0 3px rgba(16,185,129,.12);
+            box-shadow:0 0 0 3px rgba(59, 130, 246, .12);
         }
 
         .classification-control button {
@@ -845,7 +845,7 @@
 
         .classification-reason textarea:focus {
             border-color:var(--green-500);
-            box-shadow:0 0 0 3px rgba(16,185,129,.12);
+            box-shadow:0 0 0 3px rgba(59, 130, 246, .12);
         }
 
         .classification-reason small {
@@ -1120,7 +1120,7 @@
 
         .screening-details[open] > summary {
             border-bottom:1px solid var(--slate-200);
-            background:#fbfdfc;
+            background:#fbfcfe;
         }
 
         .screening-summary-copy {
@@ -1192,7 +1192,7 @@
 
         .screening-check-item:has(input:checked) {
             border-color:var(--green-300);
-            background:#f4fcf8;
+            background:#f6f8fc;
         }
 
         .screening-check-item input {
@@ -1214,7 +1214,7 @@
         }
 
         .screening-check-item input:focus-visible + span {
-            outline:3px solid rgba(16,185,129,.18);
+            outline:3px solid rgba(59, 130, 246, .18);
             outline-offset:2px;
         }
 
@@ -1287,7 +1287,7 @@
 
         .screening-notes-field textarea:focus {
             border-color:var(--green-500);
-            box-shadow:0 0 0 3px rgba(16,185,129,.12);
+            box-shadow:0 0 0 3px rgba(59, 130, 246, .12);
         }
 
         .screening-form-footer {
@@ -1428,7 +1428,7 @@
 
         .screening-history-entry.is-current {
             border-color:var(--green-300);
-            box-shadow:0 0 0 2px rgba(16,185,129,.07);
+            box-shadow:0 0 0 2px rgba(59, 130, 246, .07);
         }
 
         .screening-history-entry > summary {
@@ -1443,7 +1443,7 @@
 
         .screening-history-entry[open] > summary {
             border-bottom:1px solid var(--slate-200);
-            background:#fbfdfc;
+            background:#fbfcfe;
         }
 
         .screening-history-entry-title {
@@ -1569,7 +1569,7 @@
             padding:8px 9px;
             border-left:3px solid var(--green-400);
             border-radius:0 8px 8px 0;
-            background:#f4fcf8;
+            background:#f6f8fc;
         }
 
         .screening-history-notes strong {
@@ -1674,7 +1674,7 @@
         .outcome-details[open] > summary,
         .outcome-history > details[open] > summary {
             border-bottom:1px solid var(--slate-200);
-            background:#fbfdfc;
+            background:#fbfcfe;
         }
 
         .outcome-summary-copy {
@@ -1771,7 +1771,7 @@
         .outcome-field select:focus,
         .outcome-field textarea:focus {
             border-color:var(--green-500);
-            box-shadow:0 0 0 3px rgba(16,185,129,.12);
+            box-shadow:0 0 0 3px rgba(59, 130, 246, .12);
         }
 
         .outcome-form-footer {
@@ -1903,7 +1903,7 @@
 
         .outcome-history-entry.is-current {
             border-color:var(--green-300);
-            box-shadow:0 0 0 2px rgba(16,185,129,.07);
+            box-shadow:0 0 0 2px rgba(59, 130, 246, .07);
         }
 
         .outcome-history-heading {
@@ -1947,7 +1947,7 @@
             border-left:3px solid var(--green-400);
             border-radius:0 7px 7px 0;
             color:var(--slate-600);
-            background:#f4fcf8;
+            background:#f6f8fc;
             font-size:8px;
             line-height:1.5;
             white-space:pre-wrap;
@@ -2001,7 +2001,7 @@
                 ),
                 radial-gradient(
                     circle at 15px 15px,
-                    rgba(5,150,105,.09) 1px,
+                    rgba(42, 85, 223, .09) 1px,
                     transparent 1px
                 );
             background-size:auto,30px 30px;
@@ -2100,7 +2100,7 @@
             align-items:center;
             gap:9px;
             padding:9px 10px;
-            border:1px solid rgba(15,104,64,.16);
+            border:1px solid rgba(23, 53, 166, .16);
             border-radius:9px;
             color:inherit;
             background:rgba(255,255,255,.72);
@@ -2194,7 +2194,7 @@
 
         .reply-form textarea:focus {
             border-color:var(--green-500);
-            box-shadow:0 0 0 3px rgba(16,185,129,.12);
+            box-shadow:0 0 0 3px rgba(59, 130, 246, .12);
             background:#fff;
         }
 
@@ -3285,12 +3285,99 @@
             }
         }
 
-    </style>
+    
+        .consultation-readonly-notice,
+        .status-history {
+            margin-top: 14px;
+            border: 1px solid #d7e3df;
+            border-radius: 14px;
+            background: #f8f9fc;
+        }
+
+        .consultation-readonly-notice {
+            padding: 14px 16px;
+        }
+
+        .consultation-readonly-notice strong {
+            display: block;
+            margin-bottom: 4px;
+            color: #34416a;
+        }
+
+        .consultation-readonly-notice p,
+        .status-history p {
+            margin: 0;
+            color: #5f706c;
+            line-height: 1.55;
+        }
+
+        .status-history summary {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 13px 15px;
+            cursor: pointer;
+        }
+
+        .status-history summary span {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-history-body {
+            display: grid;
+            gap: 10px;
+            padding: 0 15px 15px;
+        }
+
+        .status-history-item {
+            padding: 12px;
+            border-radius: 12px;
+            background: #fff;
+            border: 1px solid #e3ece9;
+        }
+
+        .status-history-item > div {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 6px;
+        }
+
+        .status-history-item small {
+            color: #71817d;
+        }
+
+        .reopen-reason-field {
+            flex: 1 1 280px;
+            display: grid;
+            gap: 6px;
+        }
+
+        .reopen-reason-field span {
+            font-size: .78rem;
+            font-weight: 700;
+            color: #4b5563;
+        }
+
+        .reopen-reason-field textarea {
+            width: 100%;
+            min-height: 64px;
+            resize: vertical;
+            border: 1px solid #c8d8d3;
+            border-radius: 10px;
+            padding: 9px 11px;
+            font: inherit;
+        }
+</style>
+    <link rel="icon" type="image/jpeg" href="{{ asset('images/md-farma-logo.jpeg') }}">
+    <link rel="stylesheet" href="{{ asset('css/md-farma-logo-theme.css') }}">
 </head>
 <body>
     <header class="admin-topbar">
         <a class="brand-area" href="{{ route('admin.inbox') }}">
-            <span class="brand-mark">✚</span>
+            <span class="brand-mark" aria-hidden="true"><img src="{{ asset('images/md-farma-logo.jpeg') }}" alt="" width="52" height="52"></span>
             <span>MD Farma Admin</span>
         </a>
 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ConsultationArchiveCopyRequest;
+use App\Support\ConsultationAudit;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -92,7 +93,9 @@ class AdminArchiveCopyRequestController extends Controller
     }
 
     public function show(
-        ConsultationArchiveCopyRequest $archiveCopyRequest
+        Request $request,
+        ConsultationArchiveCopyRequest $archiveCopyRequest,
+        ConsultationAudit $audit
     ): View {
         $archiveCopyRequest->load([
             'consultation.patientProfile',
@@ -104,6 +107,13 @@ class AdminArchiveCopyRequestController extends Controller
             'logs.admin',
         ]);
 
+        $audit->recordAccess(
+            $request,
+            'archive_request_viewed',
+            $archiveCopyRequest->consultation,
+            archiveRequest: $archiveCopyRequest
+        );
+
         return view('admin.archive-requests.show', [
             'archiveRequest' => $archiveCopyRequest,
             'allowedTransitions' => $this->allowedTransitions(
@@ -114,7 +124,8 @@ class AdminArchiveCopyRequestController extends Controller
 
     public function update(
         Request $request,
-        ConsultationArchiveCopyRequest $archiveCopyRequest
+        ConsultationArchiveCopyRequest $archiveCopyRequest,
+        ConsultationAudit $audit
     ): RedirectResponse {
         $allowedTransitions = $this->allowedTransitions(
             $archiveCopyRequest->status
@@ -205,6 +216,20 @@ class AdminArchiveCopyRequestController extends Controller
                 'notes' => $notes !== '' ? $notes : null,
             ]);
         });
+
+        if ($validated['status'] === 'completed') {
+            $archiveCopyRequest->loadMissing('consultation');
+            $audit->recordAccess(
+                $request,
+                'archive_copy_completed',
+                $archiveCopyRequest->consultation,
+                archiveRequest: $archiveCopyRequest,
+                metadata: [
+                    'delivery_method' => $archiveCopyRequest->contact_method,
+                ],
+                deduplicateMinutes: 0
+            );
+        }
 
         return redirect()
             ->route(

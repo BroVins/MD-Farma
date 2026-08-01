@@ -10,35 +10,35 @@
         name="description"
         content="Konsultasi farmasi dan pembelian obat melalui Apotek MD Farma Jakarta Utara."
     >
-    <meta name="theme-color" content="#198754">
+    <meta name="theme-color" content="#1238cc">
 
     <title>Apotek MD Farma | Konsultasi dan Pembelian Obat</title>
 
     <style>
         :root {
-            --brand: #198754;
-            --brand-dark: #0f6840;
-            --brand-deep: #0a4f34;
-            --brand-soft: #eaf8f1;
-            --teal: #18b7a5;
-            --teal-soft: #e9faf7;
+            --brand: #1238cc;
+            --brand-dark: #1735a6;
+            --brand-deep: #232b3a;
+            --brand-soft: #eef2ff;
+            --teal: #53658d;
+            --teal-soft: #f3f5fb;
             --surface: #ffffff;
-            --canvas: #f6faf8;
-            --canvas-soft: #eef7f2;
-            --slate-950: #15201b;
-            --slate-800: #26342e;
-            --slate-700: #405148;
-            --slate-600: #5d6d65;
-            --slate-500: #738178;
-            --slate-300: #cfdcd5;
-            --slate-200: #dee8e3;
-            --slate-100: #edf3f0;
+            --canvas: #f7f8fb;
+            --canvas-soft: #f1f3f8;
+            --slate-950: #1f2937;
+            --slate-800: #303744;
+            --slate-700: #4b5563;
+            --slate-600: #687080;
+            --slate-500: #7f8795;
+            --slate-300: #d6dae2;
+            --slate-200: #e3e6ec;
+            --slate-100: #f1f3f7;
             --orange-soft: #fff6e9;
             --orange-border: #f5d4a3;
             --orange-text: #9b5514;
-            --shadow-sm: 0 8px 24px rgba(15, 45, 31, .06);
-            --shadow-md: 0 18px 50px rgba(15, 45, 31, .11);
-            --shadow-brand: 0 16px 34px rgba(25, 135, 84, .22);
+            --shadow-sm: 0 8px 24px rgba(18, 56, 204, .07);
+            --shadow-md: 0 18px 50px rgba(18, 56, 204, .12);
+            --shadow-brand: 0 16px 34px rgba(18, 56, 204, .24);
             --radius-lg: 24px;
             --radius-md: 18px;
             --radius-sm: 13px;
@@ -90,7 +90,7 @@
 
         a:focus-visible,
         button:focus-visible {
-            outline: 3px solid rgba(24, 183, 165, .38);
+            outline: 3px solid rgba(83, 101, 141, .38);
             outline-offset: 3px;
         }
 
@@ -137,7 +137,7 @@
             color: #fff;
             background:
                 linear-gradient(145deg, var(--teal), var(--brand));
-            box-shadow: 0 10px 24px rgba(25, 135, 84, .24);
+            box-shadow: 0 10px 24px rgba(18, 56, 204, .24);
         }
 
         .brand-mark svg {
@@ -176,7 +176,7 @@
             border-radius: 11px;
             color: #fff !important;
             background: var(--brand);
-            box-shadow: 0 8px 20px rgba(25, 135, 84, .18);
+            box-shadow: 0 8px 20px rgba(18, 56, 204, .18);
         }
 
         .hero {
@@ -186,15 +186,15 @@
             background:
                 radial-gradient(
                     circle at 84% 13%,
-                    rgba(24, 183, 165, .16),
+                    rgba(83, 101, 141, .16),
                     transparent 29%
                 ),
                 radial-gradient(
                     circle at 9% 82%,
-                    rgba(25, 135, 84, .08),
+                    rgba(18, 56, 204, .08),
                     transparent 25%
                 ),
-                linear-gradient(135deg, #f9fcfa 0%, #eaf8f1 100%);
+                linear-gradient(135deg, #fafbfc 0%, #eef2ff 100%);
         }
 
         .hero::before,
@@ -210,7 +210,7 @@
             height: 430px;
             top: -250px;
             right: -120px;
-            border: 78px solid rgba(24, 183, 165, .05);
+            border: 78px solid rgba(83, 101, 141, .05);
         }
 
         .hero::after {
@@ -218,7 +218,7 @@
             height: 300px;
             left: -175px;
             bottom: -215px;
-            border: 54px solid rgba(25, 135, 84, .05);
+            border: 54px solid rgba(18, 56, 204, .05);
         }
 
         .hero-grid {
@@ -238,7 +238,7 @@
             gap: 8px;
             margin: 0 0 19px;
             padding: 7px 11px;
-            border: 1px solid rgba(25, 135, 84, .12);
+            border: 1px solid rgba(18, 56, 204, .12);
             border-radius: 999px;
             color: var(--brand-deep);
             background: rgba(234, 248, 241, .92);
@@ -253,7 +253,7 @@
             height: 7px;
             border-radius: 50%;
             background: var(--brand);
-            box-shadow: 0 0 0 4px rgba(25, 135, 84, .11);
+            box-shadow: 0 0 0 4px rgba(18, 56, 204, .11);
         }
 
         h1 {
@@ -314,12 +314,12 @@
 
         .button-primary {
             color: #fff;
-            background: linear-gradient(135deg, var(--brand), #0b9b68);
+            background: linear-gradient(135deg, var(--brand), #2a55df);
             box-shadow: var(--shadow-brand);
         }
 
         .button-primary:hover {
-            box-shadow: 0 19px 38px rgba(25, 135, 84, .26);
+            box-shadow: 0 19px 38px rgba(18, 56, 204, .26);
         }
 
         .button-secondary {
@@ -395,7 +395,7 @@
             border-radius: 15px;
             color: #fff;
             background: linear-gradient(145deg, var(--teal), var(--brand));
-            box-shadow: 0 9px 22px rgba(25, 135, 84, .18);
+            box-shadow: 0 9px 22px rgba(18, 56, 204, .18);
             font-size: 13px;
             font-weight: 900;
         }
@@ -416,7 +416,7 @@
             align-items: center;
             gap: 7px;
             padding: 7px 10px;
-            border: 1px solid rgba(25, 135, 84, .1);
+            border: 1px solid rgba(18, 56, 204, .1);
             border-radius: 999px;
             color: var(--brand-dark);
             background: var(--brand-soft);
@@ -430,7 +430,7 @@
             height: 7px;
             border-radius: 50%;
             background: var(--brand);
-            box-shadow: 0 0 0 4px rgba(25, 135, 84, .1);
+            box-shadow: 0 0 0 4px rgba(18, 56, 204, .1);
         }
 
         .open-status.closed {
@@ -456,7 +456,7 @@
                 ),
                 radial-gradient(
                     circle at 14px 14px,
-                    rgba(25, 135, 84, .055) 1px,
+                    rgba(18, 56, 204, .055) 1px,
                     transparent 1.2px
                 );
             background-size: auto, 30px 30px;
@@ -479,7 +479,7 @@
             gap: 9px;
             margin-bottom: 14px;
             padding: 10px 11px;
-            border: 1px solid rgba(24, 183, 165, .16);
+            border: 1px solid rgba(83, 101, 141, .16);
             border-radius: 13px;
             color: var(--slate-600);
             background: rgba(233, 250, 247, .8);
@@ -514,7 +514,7 @@
             margin-left: auto;
             border-color: #c5ead8;
             border-top-right-radius: 5px;
-            background: #dcf7e9;
+            background: #e3edff;
         }
 
         .mock-bubble.pharmacy {
@@ -718,7 +718,7 @@
             padding: 13px 14px;
             border: 1px solid var(--slate-200);
             border-radius: 13px;
-            background: #f9fbfa;
+            background: #fafbfc;
         }
 
         .schedule-row span {
@@ -770,8 +770,8 @@
 
         .marketplace-card:hover {
             transform: translateY(-4px);
-            border-color: #a9d4c0;
-            box-shadow: 0 17px 38px rgba(15, 45, 31, .11);
+            border-color: #b9c4e4;
+            box-shadow: 0 17px 38px rgba(18, 56, 204, .12);
         }
 
         .marketplace-logo-wrap {
@@ -781,7 +781,7 @@
             padding: 13px 14px;
             border: 1px solid var(--slate-100);
             border-radius: 13px;
-            background: #fbfdfc;
+            background: #fbfcfe;
         }
 
         .marketplace-logo {
@@ -866,15 +866,15 @@
             align-items: center;
             gap: 44px;
             padding: 40px;
-            border: 1px solid rgba(25, 135, 84, .15);
+            border: 1px solid rgba(18, 56, 204, .15);
             border-radius: 27px;
             background:
                 radial-gradient(
                     circle at 94% 8%,
-                    rgba(24, 183, 165, .15),
+                    rgba(83, 101, 141, .15),
                     transparent 29%
                 ),
-                linear-gradient(135deg, #ffffff, #eef9f3);
+                linear-gradient(135deg, #ffffff, #f2f6ff);
             box-shadow: var(--shadow-md);
         }
 
@@ -910,7 +910,7 @@
             align-items: center;
             gap: 7px;
             padding: 8px 11px;
-            border: 1px solid rgba(25, 135, 84, .13);
+            border: 1px solid rgba(18, 56, 204, .13);
             border-radius: 999px;
             color: var(--brand-deep);
             background: rgba(255, 255, 255, .82);
@@ -1284,8 +1284,8 @@
                 gap: 8px;
                 border-radius: 14px;
                 color: #fff;
-                background: linear-gradient(135deg, var(--brand), #0b9b68);
-                box-shadow: 0 14px 34px rgba(25, 135, 84, .3);
+                background: linear-gradient(135deg, var(--brand), #2a55df);
+                box-shadow: 0 14px 34px rgba(18, 56, 204, .3);
                 text-decoration: none;
                 font-size: 12px;
                 font-weight: 900;
@@ -1311,22 +1311,15 @@
             }
         }
     </style>
+    <link rel="icon" type="image/jpeg" href="{{ asset('images/md-farma-logo.jpeg') }}">
+    <link rel="stylesheet" href="{{ asset('css/md-farma-logo-theme.css') }}">
 </head>
 
 <body>
     <header class="topbar">
         <nav class="nav container" aria-label="Navigasi utama">
             <a class="brand" href="{{ route('home') }}">
-                <span class="brand-mark" aria-hidden="true">
-                    <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke-width="2.5"
-                        stroke-linecap="round"
-                    >
-                        <path d="M12 5v14M5 12h14"/>
-                    </svg>
-                </span>
+                <span class="brand-mark" aria-hidden="true"><img src="{{ asset('images/md-farma-logo.jpeg') }}" alt="" width="52" height="52"></span>
                 <span>MD Farma</span>
             </a>
 
@@ -1929,16 +1922,7 @@
         <div class="footer-grid container">
             <div>
                 <a class="brand footer-brand" href="{{ route('home') }}">
-                    <span class="brand-mark" aria-hidden="true">
-                        <svg
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke-width="2.5"
-                            stroke-linecap="round"
-                        >
-                            <path d="M12 5v14M5 12h14"/>
-                        </svg>
-                    </span>
+                    <span class="brand-mark" aria-hidden="true"><img src="{{ asset('images/md-farma-logo.jpeg') }}" alt="" width="52" height="52"></span>
                     <span>MD Farma</span>
                 </a>
 

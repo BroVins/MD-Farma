@@ -521,6 +521,9 @@ class ConsultationController extends Controller
                 'required',
                 'in:resep,non_resep',
             ],
+            'privacy_consent' => [
+                'accepted',
+            ],
         ];
 
         if ($owner && $hasProfiles) {
@@ -547,7 +550,11 @@ class ConsultationController extends Controller
             $rules,
             array_merge(
                 $this->passwordMessages(),
-                $this->patientProfileMessages()
+                $this->patientProfileMessages(),
+                [
+                    'privacy_consent.accepted' =>
+                        'Anda harus menyetujui pemrosesan data dan kebijakan privasi sebelum memulai konsultasi.',
+                ]
             )
         );
 
@@ -563,7 +570,7 @@ class ConsultationController extends Controller
             ]);
         }
 
-        [$consultation, $owner] = DB::transaction(
+        [$consultation, $owner, $activeGuest] = DB::transaction(
             function () use (
                 $request,
                 $validated,
@@ -576,23 +583,11 @@ class ConsultationController extends Controller
                 $activeGuest = $guest;
 
                 if (! $activeGuest) {
-                    $authenticatedGuest = Auth::guard(
-                        'patient'
-                    )->user();
-
-                    if ($authenticatedGuest) {
-                        Auth::guard('patient')->logout();
-                    }
-
                     $activeGuest = ConsultationGuest::create([
                         'public_id' => (string) Str::uuid(),
                         'last_seen_at' => now(),
                         'expires_at' => $accessCookie->expiresAt(),
                     ]);
-
-                    Auth::guard('patient')->login(
-                        $activeGuest
-                    );
                 } else {
                     $activeGuest->forceFill([
                         'last_seen_at' => now(),
@@ -660,6 +655,20 @@ class ConsultationController extends Controller
                     'no_hp' => $profile->phone,
                     'jenis_konsultasi' =>
                         $validated['jenis_konsultasi'],
+                    'privacy_consent_at' => now(),
+                    'privacy_policy_version' => (string) config(
+                        'mdfarma.privacy_policy_version',
+                        '2026-08-01'
+                    ),
+                    'privacy_consent_text' => (string) config(
+                        'mdfarma.privacy_consent_text'
+                    ),
+                    'privacy_consent_ip_hash' =>
+                        $this->consentFingerprint($request->ip()),
+                    'privacy_consent_user_agent_hash' =>
+                        $this->consentFingerprint(
+                            $request->userAgent()
+                        ),
                     'status' => 'aktif',
                 ]);
 
@@ -685,10 +694,15 @@ class ConsultationController extends Controller
                         .$consultation->id
                 );
 
-                return [$consultation, $activeOwner];
+                return [
+                    $consultation,
+                    $activeOwner,
+                    $activeGuest,
+                ];
             }
         );
 
+        Auth::guard('patient')->login($activeGuest);
         $request->session()->regenerate();
         $historyAccess->unlock($request, $owner);
 
@@ -731,7 +745,7 @@ class ConsultationController extends Controller
             ->withCookie(
                 $accessCookie->make(
                     $request,
-                    $consultation->guest
+                    $activeGuest
                 )
             );
     }
@@ -788,6 +802,23 @@ class ConsultationController extends Controller
                 ]);
             }
         }
+    }
+
+    private function consentFingerprint(?string $value): ?string
+    {
+        $value = trim((string) $value);
+
+        if ($value === '') {
+            return null;
+        }
+
+        $key = (string) config('app.key');
+
+        return hash_hmac(
+            'sha256',
+            $value,
+            $key !== '' ? $key : 'md-farma-consent'
+        );
     }
 
     private function patientProfileRules(): array

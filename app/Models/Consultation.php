@@ -185,6 +185,11 @@ class Consultation extends Model
         'umur',
         'no_hp',
         'jenis_konsultasi',
+        'privacy_consent_at',
+        'privacy_policy_version',
+        'privacy_consent_text',
+        'privacy_consent_ip_hash',
+        'privacy_consent_user_agent_hash',
         'service_classification',
         'classified_by_admin_id',
         'classified_at',
@@ -198,6 +203,7 @@ class Consultation extends Model
             'last_message_at' => 'datetime',
             'closed_at' => 'datetime',
             'classified_at' => 'datetime',
+            'privacy_consent_at' => 'datetime',
         ];
     }
 
@@ -290,6 +296,21 @@ class Consultation extends Model
             Admin::class,
             'classified_by_admin_id'
         );
+    }
+
+
+    public function statusLogs()
+    {
+        return $this->hasMany(
+            ConsultationStatusLog::class
+        )->latest('id');
+    }
+
+    public function accessLogs()
+    {
+        return $this->hasMany(
+            ConsultationAccessLog::class
+        )->latest('id');
     }
 
     public function classificationLogs()

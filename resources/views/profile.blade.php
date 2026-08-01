@@ -7,30 +7,30 @@
         name="description"
         content="Kenali Apotek MD Farma yang melayani masyarakat Warakas sejak 2022, lengkap dengan konsultasi farmasi digital, layanan resep, lokasi, dan peluang kerja sama."
     >
-    <meta name="theme-color" content="#198754">
+    <meta name="theme-color" content="#1238cc">
 
     <title>Profil Apotek MD Farma | Melayani Sejak 2022</title>
 
     <style>
         :root {
-            --brand: #198754;
-            --brand-dark: #106b43;
-            --brand-deep: #073f2a;
-            --brand-soft: #e9f8f0;
-            --teal: #18b7a5;
+            --brand: #1238cc;
+            --brand-dark: #1735a6;
+            --brand-deep: #232b3a;
+            --brand-soft: #eef2ff;
+            --teal: #53658d;
             --amber: #f1a62a;
             --surface: #ffffff;
-            --canvas: #f6faf8;
-            --slate-950: #15201b;
+            --canvas: #f7f8fb;
+            --slate-950: #1f2937;
             --slate-850: #213029;
-            --slate-700: #405148;
-            --slate-600: #5d6d65;
-            --slate-500: #738178;
-            --slate-300: #cfdcd5;
-            --slate-200: #dee8e3;
-            --slate-100: #edf3f0;
-            --shadow-sm: 0 10px 30px rgba(15, 45, 31, .065);
-            --shadow-md: 0 22px 60px rgba(15, 45, 31, .12);
+            --slate-700: #4b5563;
+            --slate-600: #687080;
+            --slate-500: #7f8795;
+            --slate-300: #d6dae2;
+            --slate-200: #e3e6ec;
+            --slate-100: #f1f3f7;
+            --shadow-sm: 0 10px 30px rgba(18, 56, 204, .075);
+            --shadow-md: 0 22px 60px rgba(18, 56, 204, .13);
             --radius-lg: 26px;
             --radius-md: 19px;
         }
@@ -67,7 +67,7 @@
 
         a:focus-visible,
         button:focus-visible {
-            outline: 3px solid rgba(24, 183, 165, .35);
+            outline: 3px solid rgba(83, 101, 141, .35);
             outline-offset: 3px;
         }
 
@@ -118,7 +118,7 @@
             border-radius: 13px;
             color: #fff;
             background: linear-gradient(145deg, var(--teal), var(--brand));
-            box-shadow: 0 10px 24px rgba(25, 135, 84, .24);
+            box-shadow: 0 10px 24px rgba(18, 56, 204, .24);
         }
 
         .brand-mark svg {
@@ -155,7 +155,7 @@
             border-radius: 11px;
             color: #fff !important;
             background: var(--brand);
-            box-shadow: 0 8px 20px rgba(25, 135, 84, .18);
+            box-shadow: 0 8px 20px rgba(18, 56, 204, .18);
         }
 
         .hero {
@@ -163,9 +163,9 @@
             overflow: hidden;
             padding: 94px 0 88px;
             background:
-                radial-gradient(circle at 88% 8%, rgba(24, 183, 165, .20), transparent 27%),
-                radial-gradient(circle at 5% 90%, rgba(25, 135, 84, .10), transparent 28%),
-                linear-gradient(135deg, #fbfdfc 0%, #eaf8f1 100%);
+                radial-gradient(circle at 88% 8%, rgba(83, 101, 141, .20), transparent 27%),
+                radial-gradient(circle at 5% 90%, rgba(18, 56, 204, .10), transparent 28%),
+                linear-gradient(135deg, #fbfcfe 0%, #eef2ff 100%);
         }
 
         .hero::after {
@@ -175,7 +175,7 @@
             height: 480px;
             right: -245px;
             bottom: -310px;
-            border: 82px solid rgba(25, 135, 84, .052);
+            border: 82px solid rgba(18, 56, 204, .052);
             border-radius: 50%;
         }
 
@@ -194,7 +194,7 @@
             gap: 9px;
             margin-bottom: 22px;
             padding: 8px 12px;
-            border: 1px solid rgba(25, 135, 84, .17);
+            border: 1px solid rgba(18, 56, 204, .17);
             border-radius: 999px;
             color: var(--brand-dark);
             background: rgba(255, 255, 255, .75);
@@ -209,7 +209,7 @@
             height: 8px;
             border-radius: 50%;
             background: var(--brand);
-            box-shadow: 0 0 0 5px rgba(25, 135, 84, .10);
+            box-shadow: 0 0 0 5px rgba(18, 56, 204, .10);
         }
 
         .hero h1 {
@@ -267,13 +267,13 @@
             border-color: var(--brand);
             color: #fff;
             background: var(--brand);
-            box-shadow: 0 14px 30px rgba(25, 135, 84, .23);
+            box-shadow: 0 14px 30px rgba(18, 56, 204, .23);
         }
 
         .button-primary:hover {
             border-color: var(--brand-dark);
             background: var(--brand-dark);
-            box-shadow: 0 16px 34px rgba(25, 135, 84, .27);
+            box-shadow: 0 16px 34px rgba(18, 56, 204, .27);
         }
 
         .button-ghost {
@@ -382,7 +382,7 @@
         .section-deep {
             color: #fff;
             background:
-                radial-gradient(circle at 85% 10%, rgba(24, 183, 165, .22), transparent 28%),
+                radial-gradient(circle at 85% 10%, rgba(83, 101, 141, .22), transparent 28%),
                 linear-gradient(145deg, var(--brand-deep), var(--brand-dark));
         }
 
@@ -407,7 +407,7 @@
         }
 
         .section-deep .section-kicker {
-            color: #88e3d4;
+            color: #a7b8ef;
         }
 
         .section-head h2 {
@@ -483,7 +483,7 @@
         }
 
         .story-highlight small {
-            color: #91e8da;
+            color: #aabaf0;
             font-size: 11px;
             font-weight: 850;
             letter-spacing: .10em;
@@ -674,8 +674,8 @@
             border-radius: var(--radius-lg);
             color: #fff;
             background:
-                radial-gradient(circle at 100% 0, rgba(24, 183, 165, .30), transparent 32%),
-                linear-gradient(145deg, #073f2a, #0d6a43);
+                radial-gradient(circle at 100% 0, rgba(83, 101, 141, .30), transparent 32%),
+                linear-gradient(145deg, #232b3a, #1735a6);
             box-shadow: var(--shadow-md);
         }
 
@@ -715,7 +715,7 @@
         .partnership-point svg {
             width: 20px;
             height: 20px;
-            color: #89e3d5;
+            color: #a7b8ef;
             stroke: currentColor;
         }
 
@@ -1008,16 +1008,14 @@
             }
         }
     </style>
+    <link rel="icon" type="image/jpeg" href="{{ asset('images/md-farma-logo.jpeg') }}">
+    <link rel="stylesheet" href="{{ asset('css/md-farma-logo-theme.css') }}">
 </head>
 <body>
     <header class="topbar">
         <nav class="nav container" aria-label="Navigasi utama">
             <a class="brand" href="{{ route('home') }}">
-                <span class="brand-mark" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round">
-                        <path d="M12 5v14M5 12h14"/>
-                    </svg>
-                </span>
+                <span class="brand-mark" aria-hidden="true"><img src="{{ asset('images/md-farma-logo.jpeg') }}" alt="" width="52" height="52"></span>
                 <span>MD Farma</span>
             </a>
 

@@ -131,26 +131,26 @@ return new class extends Migration
             ->orderBy('id')
             ->pluck('id')
             ->each(function ($ownerId): void {
+                $alreadyHasDefault = ConsultationPatientProfile::query()
+                    ->where('history_owner_id', $ownerId)
+                    ->where('is_default', true)
+                    ->exists();
+
+                if ($alreadyHasDefault) {
+                    return;
+                }
+
                 $defaultProfileId = ConsultationPatientProfile::query()
                     ->where('history_owner_id', $ownerId)
                     ->orderByDesc('last_used_at')
                     ->orderByDesc('id')
                     ->value('id');
 
-                if (! $defaultProfileId) {
-                    return;
+                if ($defaultProfileId) {
+                    ConsultationPatientProfile::query()
+                        ->whereKey($defaultProfileId)
+                        ->update(['is_default' => true]);
                 }
-
-                ConsultationPatientProfile::query()
-                    ->where('history_owner_id', $ownerId)
-                    ->update(['is_default' => false]);
-
-                ConsultationPatientProfile::query()
-                    ->whereKey($defaultProfileId)
-                    ->update([
-                        'is_default' => true,
-                        'relationship' => 'saya',
-                    ]);
             });
     }
 };

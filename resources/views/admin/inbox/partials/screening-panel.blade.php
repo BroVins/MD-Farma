@@ -32,6 +32,7 @@
     $screeningSavedAt = $currentScreening?->created_at
         ?->copy()
         ->timezone($timezone);
+    $isReadOnly = $consultation->status === 'selesai';
 @endphp
 
 <div
@@ -103,6 +104,7 @@
                                     )
                                 )
                                 data-screening-check
+                                @disabled($isReadOnly)
                             >
                             <span aria-hidden="true"></span>
                             <b>{{ $label }}</b>
@@ -127,6 +129,7 @@
                         maxlength="2000"
                         placeholder="Tambahkan ringkasan keputusan, temuan penting, atau tindak lanjut."
                         data-screening-notes
+                        @readonly($isReadOnly)
                     >{{ $screeningProgress['notes'] }}</textarea>
                 </div>
 
@@ -178,11 +181,14 @@
                         <button
                             type="submit"
                             data-screening-submit
+                            @disabled($isReadOnly)
                         >
                             {{
-                                $screeningProgress['is_complete']
-                                    ? 'Simpan pembaruan'
-                                    : 'Simpan progres'
+                                $isReadOnly
+                                    ? 'Hanya-baca'
+                                    : ($screeningProgress['is_complete']
+                                        ? 'Simpan pembaruan'
+                                        : 'Simpan progres')
                             }}
                         </button>
                     </div>

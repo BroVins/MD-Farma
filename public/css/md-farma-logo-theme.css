@@ -1,0 +1,201 @@
+/*
+ * MD Farma logo-aligned visual theme.
+ * Presentation only: no routes, forms, JavaScript behavior, or backend logic.
+ */
+:root {
+    --mdf-blue: #1238cc;
+    --mdf-blue-hover: #1735a6;
+    --mdf-blue-deep: #172554;
+    --mdf-blue-soft: #eef2ff;
+    --mdf-blue-pale: #f5f7ff;
+    --mdf-charcoal: #2d2e2d;
+    --mdf-charcoal-deep: #1f2937;
+    --mdf-steel: #53658d;
+    --mdf-muted: #687080;
+    --mdf-border: #d8dce5;
+    --mdf-surface: #ffffff;
+    --mdf-canvas: #f7f8fb;
+
+    /* Preserve existing variable contracts while changing only the palette. */
+    --brand: var(--mdf-blue) !important;
+    --brand-dark: var(--mdf-blue-hover) !important;
+    --brand-deep: var(--mdf-charcoal-deep) !important;
+    --brand-soft: var(--mdf-blue-soft) !important;
+    --teal: var(--mdf-steel) !important;
+    --teal-dark: #3d4f79 !important;
+    --teal-soft: #f1f4fb !important;
+
+    --green-950: var(--mdf-charcoal-deep) !important;
+    --green-900: var(--mdf-blue-deep) !important;
+    --green-800: #1e3a8a !important;
+    --green-700: var(--mdf-blue) !important;
+    --green-600: #2a55df !important;
+    --green-500: #3b82f6 !important;
+    --green-200: #bfdbfe !important;
+    --green-100: #dbeafe !important;
+    --green-50: #eff6ff !important;
+
+    --mint-25: #fafbff !important;
+    --mint-50: #f4f7ff !important;
+    --mint-100: #e8eeff !important;
+    --mint-200: #d2ddff !important;
+
+    --canvas: var(--mdf-canvas) !important;
+    --canvas-soft: #f1f3f8 !important;
+    --surface: var(--mdf-surface) !important;
+    --slate-950: var(--mdf-charcoal-deep) !important;
+    --slate-900: #252b38 !important;
+    --slate-850: #29313e !important;
+    --slate-800: #303744 !important;
+    --slate-700: #4b5563 !important;
+    --slate-600: var(--mdf-muted) !important;
+    --slate-500: #7f8795 !important;
+    --slate-400: #9ca3af !important;
+    --slate-300: #d6dae2 !important;
+    --slate-200: #e3e6ec !important;
+    --slate-100: #f1f3f7 !important;
+    --slate-50: #f8f9fc !important;
+}
+
+html { accent-color: var(--mdf-blue); }
+body {
+    color: var(--mdf-charcoal-deep);
+    background-color: var(--mdf-canvas);
+}
+
+::selection {
+    color: #fff;
+    background: rgba(18, 56, 204, .82);
+}
+
+/* Logo treatment shared across public, patient, and admin navigation. */
+.brand-mark {
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 3px !important;
+    border: 1px solid var(--mdf-border) !important;
+    border-radius: 13px !important;
+    color: var(--mdf-blue) !important;
+    background: #fff !important;
+    box-shadow: 0 8px 22px rgba(31, 41, 55, .10) !important;
+    overflow: hidden !important;
+}
+.brand-mark img {
+    width: 100% !important;
+    height: 100% !important;
+    display: block !important;
+    object-fit: contain !important;
+    border-radius: 9px;
+}
+.brand-mark svg { display: none !important; }
+
+.brand,
+.brand-area {
+    color: var(--mdf-charcoal-deep) !important;
+}
+.brand > span:last-child,
+.brand-area > span:last-child {
+    font-weight: 800;
+    letter-spacing: -.02em;
+}
+
+/* Crisp white chrome matching the white field of the supplied logo. */
+.topbar,
+.site-bar {
+    border-bottom-color: var(--mdf-border) !important;
+    background: rgba(255, 255, 255, .96) !important;
+    box-shadow: 0 5px 22px rgba(31, 41, 55, .055) !important;
+}
+
+/* Form controls remain visually consistent without changing their behavior. */
+input:not([type="checkbox"]):not([type="radio"]),
+select,
+textarea {
+    border-color: var(--mdf-border);
+}
+input:not([type="checkbox"]):not([type="radio"]):focus,
+select:focus,
+textarea:focus {
+    border-color: var(--mdf-blue) !important;
+    box-shadow: 0 0 0 4px rgba(18, 56, 204, .12) !important;
+    outline: none;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible {
+    outline: 3px solid rgba(18, 56, 204, .36) !important;
+    outline-offset: 3px;
+}
+
+/* Keep primary actions visually clear across legacy page-specific class names. */
+.nav-cta,
+.nav-link.primary,
+.primary-button,
+.primary-action,
+.submit-button,
+.send-button,
+.btn-primary,
+.button-primary {
+    border-color: var(--mdf-blue) !important;
+    color: #fff !important;
+    background: linear-gradient(135deg, var(--mdf-blue), #2a55df) !important;
+    box-shadow: 0 12px 28px rgba(18, 56, 204, .22) !important;
+}
+.nav-cta:hover,
+.nav-link.primary:hover,
+.primary-button:hover,
+.primary-action:hover,
+.submit-button:hover,
+.send-button:hover,
+.btn-primary:hover,
+.button-primary:hover {
+    background: linear-gradient(135deg, var(--mdf-blue-hover), var(--mdf-blue)) !important;
+}
+
+/* Neutral cards and separators complement charcoal linework in the logo. */
+.card,
+.panel,
+.stat-card,
+.service-card,
+.history-card,
+.device-card,
+.profile-card {
+    border-color: var(--mdf-border);
+}
+
+@media (max-width: 680px) {
+    .brand-mark {
+        width: 42px !important;
+        height: 42px !important;
+        min-width: 42px !important;
+        border-radius: 11px !important;
+    }
+}
+
+/* Brand text remains readable when the logo sits on a dark panel. */
+.intro .brand,
+[class*="dark"] .brand {
+    color: #fff !important;
+}
+
+
+/* Disabled actions stay visibly inactive; behavior remains native. */
+button:disabled,
+input[type="submit"]:disabled,
+.send-button:disabled,
+.submit-button:disabled,
+.primary-button:disabled,
+.primary-action:disabled {
+    opacity: .52 !important;
+    cursor: not-allowed !important;
+    box-shadow: none !important;
+    filter: grayscale(.14);
+}

@@ -6,9 +6,9 @@
     <title>Permintaan Salinan Arsip — MD Farma</title>
     <style>
         :root {
-            --green-950:#052e2b; --green-900:#064e3b;
-            --green-800:#065f46; --green-700:#047857;
-            --green-100:#d1fae5; --green-50:#ecfdf5;
+            --green-950:#1f2937; --green-900:#172554;
+            --green-800:#1e3a8a; --green-700:#1238cc;
+            --green-100:#dbeafe; --green-50:#eff6ff;
             --amber-800:#92400e; --amber-100:#fef3c7;
             --blue-800:#1e40af; --blue-100:#dbeafe;
             --red-800:#991b1b; --red-100:#fee2e2;
@@ -22,7 +22,7 @@
         body { margin:0; font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color:var(--slate-950); background:var(--slate-50); }
         a { text-decoration:none; }
         button,input,select { font:inherit; }
-        .topbar { position:sticky; top:0; z-index:30; display:flex; align-items:center; justify-content:space-between; gap:18px; min-height:64px; padding:0 clamp(18px,4vw,54px); color:#fff; background:linear-gradient(135deg,var(--green-950),var(--green-800)); box-shadow:0 8px 24px rgba(6,78,59,.18); }
+        .topbar { position:sticky; top:0; z-index:30; display:flex; align-items:center; justify-content:space-between; gap:18px; min-height:64px; padding:0 clamp(18px,4vw,54px); color:#fff; background:linear-gradient(135deg,var(--green-950),var(--green-800)); box-shadow:0 8px 24px rgba(23, 37, 84, .18); }
         .brand,.nav,.actions { display:flex; align-items:center; gap:10px; }
         .brand { color:#fff; font-weight:900; }
         .brand-mark { width:38px; height:38px; display:grid; place-items:center; border:1px solid rgba(255,255,255,.2); border-radius:12px; background:rgba(255,255,255,.12); }
@@ -31,10 +31,10 @@
         .nav a:hover,.nav a.active { color:#fff; background:rgba(255,255,255,.14); }
         .logout { min-height:36px; padding:7px 11px; border:1px solid rgba(255,255,255,.18); border-radius:10px; color:#fff; background:rgba(255,255,255,.08); cursor:pointer; }
         .page { width:min(1180px,94%); margin:30px auto 70px; }
-        .hero { display:flex; align-items:end; justify-content:space-between; gap:24px; padding:28px; border-radius:22px; color:#fff; background:linear-gradient(145deg,var(--green-800),var(--green-950)); box-shadow:0 20px 55px rgba(6,78,59,.16); }
-        .eyebrow { margin:0 0 7px; color:#a7f3d0; font-size:11px; font-weight:900; letter-spacing:.1em; text-transform:uppercase; }
+        .hero { display:flex; align-items:end; justify-content:space-between; gap:24px; padding:28px; border-radius:22px; color:#fff; background:linear-gradient(145deg,var(--green-800),var(--green-950)); box-shadow:0 20px 55px rgba(23, 37, 84, .16); }
+        .eyebrow { margin:0 0 7px; color:#bfdbfe; font-size:11px; font-weight:900; letter-spacing:.1em; text-transform:uppercase; }
         h1 { margin:0; font-size:clamp(28px,4vw,42px); letter-spacing:-.04em; }
-        .hero p:last-child { max-width:680px; margin:12px 0 0; color:#d1fae5; line-height:1.65; }
+        .hero p:last-child { max-width:680px; margin:12px 0 0; color:#dbeafe; line-height:1.65; }
         .summary { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:12px; margin-top:18px; }
         .summary-card { padding:17px; border:1px solid var(--slate-200); border-radius:16px; background:#fff; box-shadow:0 10px 30px rgba(15,23,42,.05); }
         .summary-card span { display:block; color:var(--slate-500); font-size:11px; font-weight:800; }
@@ -46,7 +46,7 @@
         .filter.active { border-color:var(--green-700); color:var(--green-800); background:var(--green-50); }
         .search { display:flex; gap:8px; }
         .search input { min-height:40px; width:min(310px,65vw); padding:0 12px; border:1px solid var(--slate-300); border-radius:11px; outline:none; }
-        .search input:focus { border-color:var(--green-700); box-shadow:0 0 0 3px rgba(4,120,87,.12); }
+        .search input:focus { border-color:var(--green-700); box-shadow:0 0 0 3px rgba(18, 56, 204, .12); }
         .search button { min-height:40px; padding:0 14px; border:0; border-radius:11px; color:#fff; background:var(--green-700); font-weight:850; cursor:pointer; }
         .notice { margin:18px 0 0; padding:13px 15px; border:1px solid var(--green-100); border-radius:12px; color:var(--green-900); background:var(--green-50); }
         .request-list { display:grid; }
@@ -69,11 +69,13 @@
         @media(max-width:900px) { .summary { grid-template-columns:repeat(2,minmax(0,1fr)); } .request-row { grid-template-columns:1fr auto; } .request-row .meta { grid-column:1; } .topbar { flex-wrap:wrap; padding-top:10px; padding-bottom:10px; } .actions { margin-left:auto; } }
         @media(max-width:640px) { .brand > span:last-child { display:none; } .nav a { padding:8px 9px; } .hero { align-items:flex-start; } .summary { grid-template-columns:1fr 1fr; } .request-row { grid-template-columns:1fr; } .request-row .meta { grid-column:auto; } .review { width:100%; } .search { width:100%; } .search input { width:100%; } }
     </style>
+    <link rel="icon" type="image/jpeg" href="{{ asset('images/md-farma-logo.jpeg') }}">
+    <link rel="stylesheet" href="{{ asset('css/md-farma-logo-theme.css') }}">
 </head>
 <body>
 <header class="topbar">
     <a class="brand" href="{{ route('admin.inbox') }}">
-        <span class="brand-mark">✚</span><span>MD Farma Admin</span>
+        <span class="brand-mark" aria-hidden="true"><img src="{{ asset('images/md-farma-logo.jpeg') }}" alt="" width="52" height="52"></span><span>MD Farma Admin</span>
     </a>
     <nav class="nav" aria-label="Navigasi admin">
         <a href="{{ route('admin.inbox') }}">💬 Inbox</a>

@@ -101,6 +101,28 @@
             <dt>Total pesan</dt>
             <dd>{{ $consultation->messages->count() }} pesan</dd>
         </div>
+
+
+        <div>
+            <dt>Persetujuan privasi</dt>
+            <dd>
+                @if ($consultation->privacy_consent_at)
+                    Tercatat · versi
+                    {{ $consultation->privacy_policy_version ?? '-' }}
+                    <br>
+                    <small>
+                        {{
+                            $consultation->privacy_consent_at
+                                ->copy()
+                                ->timezone($timezone)
+                                ->format('d M Y, H.i')
+                        }} WIB
+                    </small>
+                @else
+                    Belum tercatat (konsultasi lama)
+                @endif
+            </dd>
+        </div>
     </dl>
 
     <div class="privacy-note">

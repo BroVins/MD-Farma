@@ -10,29 +10,29 @@
         name="description"
         content="Hubungi WhatsApp resmi Apotek MD Farma untuk informasi kerja sama."
     >
-    <meta name="theme-color" content="#198754">
+    <meta name="theme-color" content="#1238cc">
 
     <title>Kerja Sama | Apotek MD Farma</title>
 
     <style>
         :root {
-            --brand: #198754;
-            --brand-dark: #0f6840;
-            --brand-deep: #0a4f34;
-            --brand-soft: #eaf8f1;
-            --teal: #18b7a5;
+            --brand: #1238cc;
+            --brand-dark: #1735a6;
+            --brand-deep: #232b3a;
+            --brand-soft: #eef2ff;
+            --teal: #53658d;
             --surface: #ffffff;
-            --canvas: #f6faf8;
-            --slate-950: #15201b;
-            --slate-800: #26342e;
-            --slate-700: #405148;
-            --slate-600: #5d6d65;
-            --slate-300: #cfdcd5;
-            --slate-200: #dee8e3;
+            --canvas: #f7f8fb;
+            --slate-950: #1f2937;
+            --slate-800: #303744;
+            --slate-700: #4b5563;
+            --slate-600: #687080;
+            --slate-300: #d6dae2;
+            --slate-200: #e3e6ec;
             --danger-soft: #fff2f2;
             --danger: #a12d2d;
-            --shadow-sm: 0 8px 24px rgba(15, 45, 31, .07);
-            --shadow-md: 0 20px 60px rgba(15, 45, 31, .12);
+            --shadow-sm: 0 8px 24px rgba(18, 56, 204, .08);
+            --shadow-md: 0 20px 60px rgba(18, 56, 204, .13);
         }
 
         * {
@@ -50,15 +50,15 @@
             background:
                 radial-gradient(
                     circle at 86% 8%,
-                    rgba(24, 183, 165, .15),
+                    rgba(83, 101, 141, .15),
                     transparent 28%
                 ),
                 radial-gradient(
                     circle at 8% 88%,
-                    rgba(25, 135, 84, .09),
+                    rgba(18, 56, 204, .09),
                     transparent 24%
                 ),
-                linear-gradient(135deg, #fbfdfc 0%, #eaf8f1 100%);
+                linear-gradient(135deg, #fbfcfe 0%, #eef2ff 100%);
             font-family:
                 Inter,
                 ui-sans-serif,
@@ -78,7 +78,7 @@
 
         a:focus-visible,
         button:focus-visible {
-            outline: 3px solid rgba(24, 183, 165, .38);
+            outline: 3px solid rgba(83, 101, 141, .38);
             outline-offset: 3px;
         }
 
@@ -123,7 +123,7 @@
             border-radius: 13px;
             color: #fff;
             background: linear-gradient(145deg, var(--teal), var(--brand));
-            box-shadow: 0 10px 24px rgba(25, 135, 84, .24);
+            box-shadow: 0 10px 24px rgba(18, 56, 204, .24);
         }
 
         .brand-mark svg {
@@ -206,7 +206,7 @@
             content: "";
             border-radius: 50%;
             background: var(--brand);
-            box-shadow: 0 0 0 5px rgba(25, 135, 84, .11);
+            box-shadow: 0 0 0 5px rgba(18, 56, 204, .11);
         }
 
         h1 {
@@ -264,7 +264,7 @@
             gap: 10px;
             margin-top: 28px;
             padding: 14px 16px;
-            border: 1px solid rgba(25, 135, 84, .14);
+            border: 1px solid rgba(18, 56, 204, .14);
             border-radius: 14px;
             color: var(--slate-600);
             background: rgba(255, 255, 255, .68);
@@ -380,8 +380,8 @@
         .whatsapp-button {
             border: 1px solid var(--brand);
             color: #fff;
-            background: linear-gradient(135deg, var(--brand), #0b9b68);
-            box-shadow: 0 14px 30px rgba(25, 135, 84, .22);
+            background: linear-gradient(135deg, var(--brand), #2a55df);
+            box-shadow: 0 14px 30px rgba(18, 56, 204, .24);
         }
 
         .whatsapp-button svg,
@@ -533,22 +533,14 @@
             }
         }
     </style>
+    <link rel="icon" type="image/jpeg" href="{{ asset('images/md-farma-logo.jpeg') }}">
+    <link rel="stylesheet" href="{{ asset('css/md-farma-logo-theme.css') }}">
 </head>
 <body>
     <header class="topbar">
         <nav class="nav container" aria-label="Navigasi utama">
             <a class="brand" href="{{ route('home') }}">
-                <span class="brand-mark" aria-hidden="true">
-                    <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                    >
-                        <path d="M12 3v18M3 12h18"/>
-                    </svg>
-                </span>
+                <span class="brand-mark" aria-hidden="true"><img src="{{ asset('images/md-farma-logo.jpeg') }}" alt="" width="52" height="52"></span>
                 <span>Apotek MD Farma</span>
             </a>
 
@@ -739,7 +731,7 @@
                         text: whatsappUrl,
                         width: 280,
                         height: 280,
-                        colorDark: '#15201b',
+                        colorDark: '#1f2937',
                         colorLight: '#ffffff',
                         correctLevel: window.QRCode.CorrectLevel.M,
                     });

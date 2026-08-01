@@ -15,7 +15,9 @@ use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 class AdminController extends Controller
@@ -109,111 +111,159 @@ class AdminController extends Controller
     ): JsonResponse|RedirectResponse {
         $validated = $request->validate([
             'status' => ['required', 'in:aktif,selesai'],
+            'status_reason' => [
+                'nullable',
+                'string',
+                'max:1000',
+            ],
         ]);
 
-        if ($validated['status'] === 'selesai') {
-            if (! $consultation->service_classification) {
-                $message = 'Tetapkan klasifikasi pelayanan sebelum menyelesaikan konsultasi.';
+        $reason = trim((string) (
+            $validated['status_reason'] ?? ''
+        ));
 
-                if ($request->expectsJson()) {
-                    return response()->json([
-                        'message' => $message,
-                    ], 422);
+        $result = DB::transaction(
+            function () use (
+                $consultation,
+                $validated,
+                $reason
+            ): array {
+                $lockedConsultation = Consultation::query()
+                    ->lockForUpdate()
+                    ->findOrFail($consultation->getKey());
+
+                $previousStatus = $lockedConsultation->status;
+                $newStatus = $validated['status'];
+
+                if ($previousStatus === $newStatus) {
+                    return [
+                        'consultation' => $lockedConsultation,
+                        'changed' => false,
+                    ];
                 }
 
-                return back()->withErrors([
-                    'status' => $message,
+                if ($newStatus === 'aktif' && mb_strlen($reason) < 10) {
+                    throw ValidationException::withMessages([
+                        'status_reason' =>
+                            'Alasan mengaktifkan kembali konsultasi wajib diisi minimal 10 karakter.',
+                    ]);
+                }
+
+                if ($newStatus === 'selesai') {
+                    $this->validateConsultationCanBeClosed(
+                        $lockedConsultation
+                    );
+                }
+
+                $lockedConsultation->forceFill([
+                    'status' => $newStatus,
+                    'closed_at' => $newStatus === 'selesai'
+                        ? now()
+                        : null,
+                ])->save();
+
+                $lockedConsultation->statusLogs()->create([
+                    'admin_id' => (int) Auth::guard('admin')->id(),
+                    'previous_status' => $previousStatus,
+                    'new_status' => $newStatus,
+                    'reason' => $reason !== ''
+                        ? $reason
+                        : 'Konsultasi diselesaikan setelah klasifikasi, skrining, dan hasil akhir lengkap.',
+                    'created_at' => now(),
                 ]);
+
+                return [
+                    'consultation' => $lockedConsultation,
+                    'changed' => true,
+                ];
             }
+        );
 
-            $screeningProgress = $consultation
-                ->screeningProgress();
+        /** @var Consultation $updatedConsultation */
+        $updatedConsultation = $result['consultation'];
 
-            if (! $screeningProgress['is_complete']) {
-                $message = 'Lengkapi checklist skrining ('
-                    .$screeningProgress['completed'].'/'
-                    .$screeningProgress['required']
-                    .') sebelum menyelesaikan konsultasi.';
+        if (! $result['changed']) {
+            $message = 'Status konsultasi tidak berubah.';
+        } else {
+            AnalyticsEvent::recordOnce(
+                $request,
+                $updatedConsultation->status === 'selesai'
+                    ? 'consultation_closed'
+                    : 'consultation_reopened',
+                $updatedConsultation,
+                [
+                    'status' => $updatedConsultation->status,
+                    'reason_recorded' => $reason !== '',
+                ],
+                'status:'.$updatedConsultation->status.':'
+                    .$updatedConsultation->updated_at->timestamp
+            );
 
-                if (
-                    $screeningProgress['completed']
-                        === $screeningProgress['required']
-                    && $screeningProgress['notes_required']
-                    && ! $screeningProgress['notes_complete']
-                ) {
-                    $message = 'Isi catatan skrining wajib sebelum menyelesaikan konsultasi.';
-                }
+            $this->broadcastDashboardActivity(
+                $updatedConsultation,
+                'status_changed'
+            );
 
-                if ($request->expectsJson()) {
-                    return response()->json([
-                        'message' => $message,
-                    ], 422);
-                }
+            $this->broadcastInboxActivity(
+                $updatedConsultation,
+                'status_changed'
+            );
 
-                return back()->withErrors([
-                    'status' => $message,
-                ]);
-            }
-
-            $outcomeProgress = $consultation
-                ->outcomeProgress();
-
-            if (! $outcomeProgress['is_complete']) {
-                $message = 'Tetapkan hasil akhir pelayanan sebelum menyelesaikan konsultasi.';
-
-                if ($request->expectsJson()) {
-                    return response()->json([
-                        'message' => $message,
-                    ], 422);
-                }
-
-                return back()->withErrors([
-                    'status' => $message,
-                ]);
-            }
+            $message = $updatedConsultation->status === 'selesai'
+                ? 'Konsultasi ditandai selesai dan sekarang bersifat hanya-baca.'
+                : 'Konsultasi diaktifkan kembali. Alasan perubahan tersimpan pada audit.';
         }
-
-        $consultation->forceFill([
-            'status' => $validated['status'],
-            'closed_at' => $validated['status'] === 'selesai'
-                ? now()
-                : null,
-        ])->save();
-
-        AnalyticsEvent::recordOnce(
-            $request,
-            $validated['status'] === 'selesai'
-                ? 'consultation_closed'
-                : 'consultation_reopened',
-            $consultation,
-            ['status' => $validated['status']],
-            'status:'.$validated['status'].':'
-                .$consultation->updated_at->timestamp
-        );
-
-        $this->broadcastDashboardActivity(
-            $consultation,
-            'status_changed'
-        );
-
-        $this->broadcastInboxActivity(
-            $consultation,
-            'status_changed'
-        );
-
-        $message = $validated['status'] === 'selesai'
-            ? 'Konsultasi ditandai selesai.'
-            : 'Konsultasi diaktifkan kembali.';
 
         if ($request->expectsJson()) {
             return response()->json([
                 'success' => true,
+                'changed' => $result['changed'],
                 'message' => $message,
-                'status' => $consultation->status,
+                'status' => $updatedConsultation->status,
             ]);
         }
 
         return back()->with('success', $message);
+    }
+
+    private function validateConsultationCanBeClosed(
+        Consultation $consultation
+    ): void {
+        if (! $consultation->service_classification) {
+            throw ValidationException::withMessages([
+                'status' =>
+                    'Tetapkan klasifikasi pelayanan sebelum menyelesaikan konsultasi.',
+            ]);
+        }
+
+        $screeningProgress = $consultation->screeningProgress();
+
+        if (! $screeningProgress['is_complete']) {
+            $message = 'Lengkapi checklist skrining ('
+                .$screeningProgress['completed'].'/'
+                .$screeningProgress['required']
+                .') sebelum menyelesaikan konsultasi.';
+
+            if (
+                $screeningProgress['completed']
+                    === $screeningProgress['required']
+                && $screeningProgress['notes_required']
+                && ! $screeningProgress['notes_complete']
+            ) {
+                $message = 'Isi catatan skrining wajib sebelum menyelesaikan konsultasi.';
+            }
+
+            throw ValidationException::withMessages([
+                'status' => $message,
+            ]);
+        }
+
+        if (! $consultation->outcomeProgress()['is_complete']) {
+            throw ValidationException::withMessages([
+                'status' =>
+                    'Tetapkan hasil akhir pelayanan sebelum menyelesaikan konsultasi.',
+            ]);
+        }
     }
 
     public function logout(Request $request): RedirectResponse

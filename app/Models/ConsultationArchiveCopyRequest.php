@@ -89,6 +89,15 @@ class ConsultationArchiveCopyRequest extends Model
         );
     }
 
+
+    public function accessLogs()
+    {
+        return $this->hasMany(
+            ConsultationAccessLog::class,
+            'archive_copy_request_id'
+        );
+    }
+
     public function consultation()
     {
         return $this->belongsTo(Consultation::class);

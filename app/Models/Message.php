@@ -19,6 +19,12 @@ class Message extends Model
     }
 
 
+
+    public function accessLogs()
+    {
+        return $this->hasMany(ConsultationAccessLog::class);
+    }
+
     public function classificationNotice()
     {
         return $this->hasOne(
